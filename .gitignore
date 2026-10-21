@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# Source dataset - 167 MB, above GitHub's 100 MB per-file limit.
+# Loan Risk Analytics.ipynb downloads it from Zenodo (record 11295916).
+loan_risk_analytics.csv
+
+# Unrelated retail-sales / churn analysis files (they live in their own repos)
+retail_sales_ml_apl.csv
+Bank-Churn.ipynb
+Business Sales.ipynb
+churn-analysis.html
+sales_dashboard.py
+generate_data.py

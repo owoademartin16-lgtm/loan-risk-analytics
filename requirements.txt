@@ -1,0 +1,13 @@
+# Loan Risk Analytics — runtime dependencies
+#
+#   pip install -r requirements.txt
+#   streamlit run app.py
+#
+# scikit-learn is pinned because the trained pipeline in model/ has to be
+# unpickled with a compatible version.
+streamlit>=1.66.0
+pandas>=3.0.6
+plotly>=7.1.0
+scikit-learn==1.9.1
+joblib>=1.6.0
+pyarrow>=26.0.0
