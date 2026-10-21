@@ -18,7 +18,6 @@ file is already clean and the model already contains its own preprocessing.
 
 from __future__ import annotations
 
-import base64
 from pathlib import Path
 
 import joblib
@@ -145,35 +144,6 @@ STYLE_CSS = """
         div[data-testid="stMetric"] { border-left-color: var(--amber); }
       .st-key-kpi_row div[data-testid="stHorizontalBlock"] > div:nth-child(4)
         div[data-testid="stMetric"] { border-left-color: #7C6BD6; }
-
-      /* KPI icon badge: a tinted chip with the glyph masked out of it. */
-      .st-key-kpi_row div[data-testid="stMetric"]::before {
-        content: "";
-        position: absolute;
-        top: 11px;
-        right: 12px;
-        width: 32px;
-        height: 32px;
-        border-radius: 10px;
-        background: var(--kpi-soft);
-      }
-      .st-key-kpi_row div[data-testid="stMetric"]::after {
-        content: "";
-        position: absolute;
-        top: 18px;
-        right: 19px;
-        width: 18px;
-        height: 18px;
-        background-color: var(--kpi-accent);
-        -webkit-mask-image: var(--kpi-icon);
-        mask-image: var(--kpi-icon);
-        -webkit-mask-size: contain;
-        mask-size: contain;
-        -webkit-mask-repeat: no-repeat;
-        mask-repeat: no-repeat;
-        -webkit-mask-position: center;
-        mask-position: center;
-      }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
         div[data-testid="stMetric"] { animation-delay: 0.07s; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
@@ -188,7 +158,7 @@ STYLE_CSS = """
         border-radius: 14px;
         padding: 14px 16px 4px 16px;
         box-shadow: 0 1px 3px rgba(21, 48, 77, 0.06);
-        transition: box-shadow 0.15s ease;
+        transition: box-shadow 0.15s ease, transform 0.15s ease;
       }
       [class*="st-key-card-"]:hover {
         box-shadow: 0 10px 24px rgba(21, 48, 77, 0.09);
@@ -256,30 +226,6 @@ STYLE_CSS = """
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      /* The icon in front of every tab label. */
-      div[data-testid="stTabs"] [data-testid="stTab"] p::before {
-        content: "";
-        display: inline-block;
-        width: 18px;
-        height: 18px;
-        margin-right: 8px;
-        vertical-align: -3px;
-        background-color: currentColor;
-        -webkit-mask-image: var(--tab-icon);
-        mask-image: var(--tab-icon);
-        -webkit-mask-size: contain;
-        mask-size: contain;
-        -webkit-mask-repeat: no-repeat;
-        mask-repeat: no-repeat;
-        -webkit-mask-position: center;
-        mask-position: center;
-        transition: transform 0.25s ease;
-      }
-      div[data-testid="stTabs"] [data-testid="stTab"]:hover p::before {
-        transform: scale(1.14) rotate(-5deg);
-      }
-      div[data-testid="stTabs"] [data-testid="stTab"][aria-selected="true"]:hover
-        p::before { transform: scale(1.06); }
 
       /* --------------------------------------------------------- Panel motion */
       @keyframes panelIn1 {
@@ -349,14 +295,17 @@ STYLE_CSS = """
 
       /* ---------------------------------------------------- Page subtitle */
       .page-sub {
-        margin: 2px 0 18px 0;
-        padding: 12px 16px;
-        background: linear-gradient(90deg, #F1F7FB 0%, rgba(255, 255, 255, 0) 92%);
+        position: relative;
+        margin: 10px 0 20px 0;
+        padding: 14px 20px 14px 18px;
+        background: linear-gradient(115deg, #EAF3F8 0%, #F7FBFD 42%, #FFFFFF 100%);
+        border: 1px solid var(--line);
         border-left: 4px solid var(--brand);
-        border-radius: 0 10px 10px 0;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(21, 48, 77, 0.06);
         color: var(--muted);
         font-size: 0.95rem;
-        line-height: 1.55;
+        line-height: 1.6;
       }
       .page-sub b { color: var(--ink); font-weight: 700; }
       /* ------------------------------------------------------- Risk card */
@@ -532,83 +481,6 @@ STYLE_CSS = """
       hr { border-color: var(--line); }
 """
 
-# ---------------------------------------------------------------------------
-# Icons
-# ---------------------------------------------------------------------------
-# The icons are inline SVG (Material Design paths) that are handed to the
-# browser as CSS masks. A mask only uses the alpha channel of the graphic, so
-# a glyph always picks up the colour of the element it sits in — which means
-# the tab icons turn white with the active tab on their own.
-
-KPI_ICONS = {
-    "total_loans": (
-        '<path d="M12 2.4 22 7.9 12 13.4 2 7.9 12 2.4z"/>'
-        '<path d="M2.6 11.8 12 17l9.4-5.2 1.7 1.1L12 18.6 1.9 12.9 2.6 11.8z"/>'
-    ),
-    "defaulted_loans": (
-        '<path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>'
-    ),
-    "default_rate": (
-        '<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 '
-        '22 12S17.52 2 11.99 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 '
-        '8-8 8z"/>'
-    ),
-    "avg_amount": (
-        '<path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 '
-        '2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 '
-        '0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>'
-    ),
-}
-
-TAB_ICONS = {
-    "overview": '<path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>',
-    "credit_risk": (
-        '<path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 '
-        '2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>'
-    ),
-    "geography": (
-        '<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 '
-        '9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 '
-        '2.5z"/>'
-    ),
-}
-
-
-def _icon_uri(markup: str) -> str:
-    """Turn an inline SVG into a CSS ``url(...)`` that can be used as a mask."""
-    svg = (
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" '
-        f'fill="currentColor">{markup}</svg>'
-    )
-    encoded = base64.b64encode(svg.encode("utf-8")).decode("ascii")
-    return f'url("data:image/svg+xml;base64,{encoded}")'
-
-
-ICON_CSS = f"""
-      /* ------------------------------------------------------- KPI icon colours */
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(1)
-        {{ --kpi-accent: #2E86AB; --kpi-soft: #EAF3F8;
-           --kpi-icon: {_icon_uri(KPI_ICONS["total_loans"])}; }}
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
-        {{ --kpi-accent: #E4572E; --kpi-soft: #FCEDE7;
-           --kpi-icon: {_icon_uri(KPI_ICONS["defaulted_loans"])}; }}
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
-        {{ --kpi-accent: #F59E0B; --kpi-soft: #FDF3E2;
-           --kpi-icon: {_icon_uri(KPI_ICONS["default_rate"])}; }}
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
-        {{ --kpi-accent: #7C6BD6; --kpi-soft: #EFEDFB;
-           --kpi-icon: {_icon_uri(KPI_ICONS["avg_amount"])}; }}
-
-      /* ---------------------------------------------------------- Tab icon glyphs */
-      div[data-testid="stTabs"] [role="tablist"] > [data-testid="stTab"]:nth-child(1)
-        {{ --tab-icon: {_icon_uri(TAB_ICONS["overview"])}; }}
-      div[data-testid="stTabs"] [role="tablist"] > [data-testid="stTab"]:nth-child(2)
-        {{ --tab-icon: {_icon_uri(TAB_ICONS["credit_risk"])}; }}
-      div[data-testid="stTabs"] [role="tablist"] > [data-testid="stTab"]:nth-child(3)
-        {{ --tab-icon: {_icon_uri(TAB_ICONS["geography"])}; }}
-"""
-
-
 def page_subtitle(html: str) -> None:
     """Render a styled subtitle line underneath the page title."""
     st.markdown(f'<div class="page-sub">{html}</div>', unsafe_allow_html=True)
@@ -616,7 +488,7 @@ def page_subtitle(html: str) -> None:
 
 def inject_styles() -> None:
     """Inject the global stylesheet into the current Streamlit page."""
-    st.html(f"<style>{STYLE_CSS}{ICON_CSS}</style>")
+    st.html(f"<style>{STYLE_CSS}</style>")
 
 # ---------------------------------------------------------------------------
 # Band definitions
@@ -862,11 +734,11 @@ def _build_template() -> go.layout.Template:
             plot_bgcolor="rgba(0,0,0,0)",
             colorway=[PRIMARY, DEFAULT_RED, "#7FB2C7", "#F2A65A", "#4B7F52"],
             xaxis=dict(
-                gridcolor=GRID, zeroline=False, linecolor=GRID,
+                showgrid=False, zeroline=False, linecolor=GRID,
                 tickfont=dict(size=12, color=MUTED), title_font=dict(size=12.5, color=TEXT),
             ),
             yaxis=dict(
-                gridcolor=GRID, zeroline=False, linecolor=GRID,
+                showgrid=False, zeroline=False, linecolor=GRID,
                 tickfont=dict(size=12, color=MUTED), title_font=dict(size=12.5, color=TEXT),
             ),
             legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=12, color=TEXT)),
