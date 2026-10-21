@@ -17,7 +17,8 @@ re-cleans the data and never writes to either asset.
 ### Dashboard page
 
 * **KPI row** — total loans, defaulted loans, overall default rate and
-  average loan amount for the current selection.
+  average loan amount for the current selection. Each card carries an icon
+  badge in its own accent colour.
 * **Sidebar filters** — loan purpose and loan issue year range. The filters live in `app.py`, so they keep their state while you
   move between pages.
 * **Eight charts**, each with a hover tooltip that shows the group's total
@@ -37,7 +38,8 @@ re-cleans the data and never writes to either asset.
 * Bars carry percentage labels and every y-axis has headroom so the labels
   are never clipped. The charts are grouped into three tabs
   (*Overview*, *Credit Risk*, *Purpose & Geography*) and laid out in
-  two columns.
+  two columns. The tabs are styled as a segmented control with icons and a
+  sliding highlight.
 
 ### Predict Default page
 
@@ -178,10 +180,40 @@ pickle format for the legacy `predictor.py` module.
 
 ## Styling
 
-The global stylesheet lives in `utils.py` (`STYLE_CSS`) and is injected with
-`st.html()` by `app.py` (sidebar) and by each page script — with
+The global stylesheet lives in `utils.py` (`STYLE_CSS` and `ICON_CSS`) and is
+injected with `st.html()` by `app.py` (sidebar) and by each page script — with
 `st.navigation` the main script's own elements are only rendered on the
 default page, so the CSS has to be injected from the page scripts as well.
 
 The palette is `#2E86AB` (primary) and `#E4572E` (defaults), with the risk
 bands using green `#22C55D`, amber `#F59E0B` and red `#EF4444`.
+
+### Icons
+
+The KPI badges and the chart-switcher buttons carry icons. They are inline
+SVG (Material Design paths) that are handed to the browser as CSS masks, so a
+glyph always picks up the colour of the element it sits in — the tab icons
+turn white with the active tab on their own.
+
+| Where | Icon |
+|---|---|
+| Total loans | stacked layers |
+| Defaulted loans | warning triangle |
+| Overall default rate | ring |
+| Average loan amount | wallet |
+| Overview tab | dashboard grid |
+| Credit Risk tab | credit card |
+| Purpose & Geography tab | map pin |
+
+### Motion
+
+* The four KPI cards fade in one after the other (0.07 s apart).
+* The chart switcher is a segmented control: a gradient pill slides to the
+  selected tab, the icons shift from grey to white and the label lifts on
+  hover.
+* Switching tabs replays the entrance animation of the panel and of its chart
+  cards, so every switch feels like the charts are being re-drawn. The
+  animation name changes with the active tab, which is what makes the motion
+  replay without any JavaScript.
+* Chart cards and KPI cards lift slightly on hover.
+
