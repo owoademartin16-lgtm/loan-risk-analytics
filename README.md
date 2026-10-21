@@ -25,7 +25,7 @@ re-cleans the data and never writes to either asset.
 
   | Chart | Notes |
   |---|---|
-  | Outcome Distribution | Fully paid (`#2E86AB`) vs defaulted (`#E4572E`) |
+  | Outcome Distribution | Fully paid (`#148553`) vs defaulted (`#8CB9A5`) |
   | Default Rate By issue year | Line chart; warns that the newest cohorts are understated |
   | Default Rate By loan amount band | 0–5k … 30k+ |
   | Default Rate By FICO band | Below 580 … 740+ (empty bands are dropped) |
@@ -170,10 +170,10 @@ pickle format for the legacy `predictor.py` module.
   The newest cohorts are therefore understated.
 - **Minimum-sample threshold.** Purpose and state rankings exclude groups
   with fewer than 100 loans; small groups produce noisy rates.
-- **Data ends December 2018.** The portfolio is historical.
+- **Data ends December 2018.** The loan book is historical.
 - **Prediction is not a decision.** The model was trained with balanced
   class weights, so its probabilities lean towards the minority class and
-  should be read as a relative risk score, not as a portfolio default
+  should be read as a relative risk score, not as a book-wide default
   frequency. A single score should never be the sole basis for approving or
   rejecting an application.
 
@@ -184,22 +184,39 @@ injected with `st.html()` by `app.py` (sidebar) and by each page script — with
 `st.navigation` the main script's own elements are only rendered on the
 default page, so the CSS has to be injected from the page scripts as well.
 
-The palette is `#2E86AB` (primary) and `#E4572E` (defaults), with the risk
-bands using green `#22C55D`, amber `#F59E0B` and red `#EF4444`.
+The app follows one flat, emerald design system:
+
+| Token | Value | Where it is used |
+|---|---|---|
+| Primary | `#148553` | main series, submit button, active navigation |
+| Secondary | `#8CB9A5` | the second series (defaulted) |
+| Ink | `#111111` | headings, KPI values, risk marker |
+| Muted | `#7A7F87` | captions, axis labels, secondary text |
+| Hairline | `#E4E4E6` | card borders, rules |
+| Tile | `#F3F3F3` | KPI tiles, subtitle box, tab track |
+| Backdrop | `#DDDDDF` | the page behind the white content sheet |
+
+Typography is **Inter** — loaded from Google Fonts, with Helvetica Neue as the
+offline fallback — and every chart uses the same typeface and colourway
+(`#148553`, `#8CB9A5`, `#0F7A4C`, `#C7E9D8`, `#5B8C74`).
 
 ### Layout details
 
-* Each page opens with a subtitle set in a tinted callout box (rounded corners,
-  hairline border, soft shadow and a brand-coloured bar on the left).
+* The app sits on a soft grey backdrop and the content itself is a white
+  sheet with rounded corners and a soft shadow.
+* Each page opens with a subtitle set in a flat grey box (rounded corners, no
+  border).
+* The KPI cards are flat `#F3F3F3` tiles without borders or shadows: a small
+  uppercase label and the number, nothing else.
 * The charts are drawn without gridlines — only the axis lines remain, so the
   bars carry the reading.
-* The KPI cards are plain cards with an accent-coloured left border; the
-  numbers are the only thing on them.
+* The risk bands keep their semantics: green `#148553` (low), amber `#F59E0B`
+  (medium) and red `#EF4444` (high).
 
 ### Motion
 
 * The four KPI cards fade in one after the other (0.07 s apart).
-* The chart switcher is a segmented control: a gradient pill slides to the
+* The chart switcher is a segmented control: a white pill slides to the
   selected tab and the label lifts on hover.
 * Switching tabs replays the entrance animation of the panel and of its chart
   cards, so every switch feels like the charts are being re-drawn. The

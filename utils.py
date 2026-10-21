@@ -50,12 +50,12 @@ REQUIRED_COLUMNS = [
 # ---------------------------------------------------------------------------
 # Palette
 # ---------------------------------------------------------------------------
-PRIMARY = "#2E86AB"      # main colour: fully paid / primary series
-DEFAULT_RED = "#E4572E"  # default / defaulted series
-TEXT = "#15304D"
-MUTED = "#5B6B7C"
-GRID = "#E4EAF0"
-FONT = "Helvetica Neue, Helvetica, Arial, sans-serif"
+PRIMARY = "#148553"      # main colour: fully paid / primary series
+SECONDARY = "#8CB9A5"    # muted green: the second series (defaulted)
+TEXT = "#111111"
+MUTED = "#7A7F87"
+GRID = "#E4E4E6"
+FONT = "Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif"
 
 PAID_LABEL = "Fully Paid"
 DEFAULT_LABEL = "Defaulted"
@@ -73,77 +73,97 @@ MIN_SAMPLE_SIZE = 100
 # rendered on the default page, so the CSS has to be injected from the page
 # scripts (and from the sidebar) to be present everywhere.
 STYLE_CSS = """
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
       :root {
-        --brand: #2E86AB;
-        --brand-dark: #1F6A8A;
-        --brand-soft: #EAF3F8;
-        --danger: #E4572E;
-        --ink: #15304D;
-        --muted: #5B6B7C;
-        --line: #E4EAF0;
-        --green: #22C55D;
-        --amber: #F59E0B;
-        --red: #EF4444;
+        --brand: #148553;
+        --brand-dark: #0F7A4C;
+        --brand-soft: #E4F2EC;
+        --brand-line: #BFE3D0;
+        --danger: #D64545;
+        --ink: #111111;
+        --muted: #7A7F87;
+        --line: #E4E4E6;
+        --tile: #F3F3F3;
+        --page: #DDDDDF;
+        --green: #148553;
+        --amber: #E0A200;
+        --red: #D64545;
       }
-      .block-container { padding-top: 2.1rem; padding-bottom: 3rem; }
-      h1, h2, h3 { color: var(--ink); letter-spacing: -0.01em; }
+
+      /* Typography: one clean grotesque across the whole app. */
+      html, body, [class*="css"], [data-testid="stApp"], [data-testid="stApp"] p,
+      [data-testid="stApp"] h1, [data-testid="stApp"] h2, [data-testid="stApp"] h3,
+      [data-testid="stApp"] span, [data-testid="stApp"] div, [data-testid="stApp"] li,
+      [data-testid="stApp"] label, button, input, select, textarea {
+        font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+      }
+
+      /* App frame: a white sheet floating on a soft grey backdrop. */
+      [data-testid="stAppViewContainer"] { background: var(--page); }
+      section.main, [data-testid="stMain"] { background: transparent; }
+      .block-container {
+        background: #FFFFFF;
+        border-radius: 18px;
+        box-shadow: 0 18px 46px rgba(17, 17, 17, 0.13);
+        padding: 2.1rem 2.4rem 2.8rem 2.4rem;
+        margin: 1.1rem 0 1.1rem 0;
+        max-width: 1200px;
+      }
+      h1, h2, h3 { color: var(--ink); letter-spacing: -0.02em; }
       h1 {
-        font-size: 3rem !important;
-        font-weight: 800 !important;
+        font-size: 2.15rem !important;
+        font-weight: 700 !important;
         letter-spacing: -0.035em !important;
-        line-height: 1.05 !important;
-        color: var(--brand) !important;
-        display: inline-block;
-        border-bottom: 3px solid var(--brand);
-        padding-bottom: 8px;
-        margin-bottom: 6px;
+        line-height: 1.15 !important;
+        color: var(--ink) !important;
+        margin: 0 0 2px 0 !important;
       }
       h3 {
-        font-size: 1.02rem !important;
+        font-size: 0.98rem !important;
         font-weight: 700 !important;
         color: var(--ink) !important;
-        letter-spacing: -0.005em;
-        padding-left: 11px !important;
-        border-left: 4px solid var(--brand);
-        margin: 0.1rem 0 0.2rem 0 !important;
+        padding-left: 0 !important;
+        border-left: none !important;
+        margin: 0 0 0.25rem 0 !important;
+        letter-spacing: -0.012em;
       }
-      section.main p { color: var(--muted); }
-      section.main [data-testid="stCaptionContainer"] p { font-size: 0.86rem; }
+      [data-testid="stMain"] p { color: var(--muted); }
+      [data-testid="stMain"] [data-testid="stCaptionContainer"] p { font-size: 0.84rem; }
+      [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.55;
+      }
 
       /* ---------------------------------------------------------------- KPI */
       div[data-testid="stMetric"] {
         position: relative;
-        background: linear-gradient(180deg, #FFFFFF 0%, #FBFCFD 100%);
-        border: 1px solid var(--line);
-        border-left: 4px solid var(--brand);
+        background: var(--tile);
+        border: none;
         border-radius: 12px;
-        padding: 14px 18px 12px 18px;
-        box-shadow: 0 1px 3px rgba(21, 48, 77, 0.06);
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        padding: 16px 18px 14px 18px;
+        box-shadow: none;
+        transition: transform 0.15s ease, background 0.15s ease;
         animation: kpiIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
       }
       div[data-testid="stMetric"]:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 22px rgba(21, 48, 77, 0.10);
+        background: #EFEFEF;
       }
-      div[data-testid="stMetricLabel"] p {
-        font-size: 0.76rem !important;
-        font-weight: 700;
-        letter-spacing: 0.07em;
+      [data-testid="stMetricLabel"] p {
+        font-size: 0.71rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.09em !important;
         text-transform: uppercase;
-        color: var(--muted);
+        color: var(--muted) !important;
       }
       div[data-testid="stMetricValue"] {
-        color: var(--ink);
-        font-weight: 800;
-        letter-spacing: -0.02em;
+        color: var(--ink) !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.03em;
+        font-size: 1.85rem;
       }
-      .st-key-kpi_row div[data-testid="stHorizontalBlock"] > div:nth-child(2)
-        div[data-testid="stMetric"] { border-left-color: var(--danger); }
-      .st-key-kpi_row div[data-testid="stHorizontalBlock"] > div:nth-child(3)
-        div[data-testid="stMetric"] { border-left-color: var(--amber); }
-      .st-key-kpi_row div[data-testid="stHorizontalBlock"] > div:nth-child(4)
-        div[data-testid="stMetric"] { border-left-color: #7C6BD6; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
         div[data-testid="stMetric"] { animation-delay: 0.07s; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
@@ -155,13 +175,13 @@ STYLE_CSS = """
       [class*="st-key-card-"] {
         background: #FFFFFF;
         border: 1px solid var(--line) !important;
-        border-radius: 14px;
-        padding: 14px 16px 4px 16px;
-        box-shadow: 0 1px 3px rgba(21, 48, 77, 0.06);
+        border-radius: 12px;
+        padding: 16px 18px 6px 18px;
+        box-shadow: none;
         transition: box-shadow 0.15s ease, transform 0.15s ease;
       }
       [class*="st-key-card-"]:hover {
-        box-shadow: 0 10px 24px rgba(21, 48, 77, 0.09);
+        box-shadow: 0 10px 24px rgba(17, 17, 17, 0.06);
         transform: translateY(-2px);
       }
 
@@ -170,11 +190,10 @@ STYLE_CSS = """
         position: relative;
         display: flex;
         gap: 0;
-        background: #F2F6F9;
-        border: 1px solid var(--line);
-        border-radius: 999px;
+        background: var(--tile);
+        border: none;
+        border-radius: 10px;
         padding: 4px;
-        box-shadow: inset 0 1px 3px rgba(21, 48, 77, 0.05);
       }
       /* The sliding pill behind the active tab. The position is carried by a
          custom property (Chromium does not re-check :has() on pseudo
@@ -196,9 +215,11 @@ STYLE_CSS = """
         left: 4px;
         width: calc((100% - 8px) / 3);
         height: calc(100% - 8px);
-        border-radius: 999px;
-        background: linear-gradient(90deg, #2E86AB, #1F6A8A);
-        box-shadow: 0 6px 14px rgba(46, 134, 171, 0.28);
+        box-sizing: border-box;
+        border-radius: 8px;
+        background: #FFFFFF;
+        border: 1px solid var(--line);
+        box-shadow: 0 2px 6px rgba(17, 17, 17, 0.07);
         transform: translateX(var(--pill-x));
         transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 0;
@@ -209,16 +230,16 @@ STYLE_CSS = """
         z-index: 1;
         flex: 1 1 0;
         min-width: 0;
-        border-radius: 999px;
+        border-radius: 8px;
         padding: 0.5rem 0.9rem;
         font-weight: 600;
         color: var(--muted);
         transition: color 0.2s ease;
       }
-      div[data-testid="stTabs"] [data-testid="stTab"]:hover { color: var(--brand); }
+      div[data-testid="stTabs"] [data-testid="stTab"]:hover { color: var(--ink); }
       div[data-testid="stTabs"] [data-testid="stTab"][aria-selected="true"],
       div[data-testid="stTabs"] [data-testid="stTab"][aria-selected="true"]:hover
-        { color: #FFFFFF; }
+        { color: var(--ink); font-weight: 700; }
       div[data-testid="stTabs"] [data-testid="stTab"] p {
         color: inherit;
         font-weight: inherit;
@@ -277,16 +298,18 @@ STYLE_CSS = """
 
       /* --------------------------------------------------------------- Form */
       div[data-testid="stForm"] button[data-testid="stBaseButton-primaryFormSubmit"] {
-        background: linear-gradient(90deg, #2E86AB, #1F6A8A);
+        background: var(--brand);
         border: none;
-        border-radius: 10px;
-        font-weight: 700;
-        letter-spacing: 0.01em;
+        border-radius: 8px;
+        font-weight: 600;
+        letter-spacing: 0;
         padding: 0.5rem 1.4rem;
-        box-shadow: 0 6px 16px rgba(46, 134, 171, 0.28);
+        box-shadow: none;
+        transition: background 0.15s ease;
       }
       div[data-testid="stForm"] button[data-testid="stBaseButton-primaryFormSubmit"]:hover {
-        box-shadow: 0 8px 20px rgba(46, 134, 171, 0.38);
+        background: var(--brand-dark);
+        color: #FFFFFF;
       }
       div[data-testid="stWidgetLabel"] p {
         font-weight: 600;
@@ -295,14 +318,11 @@ STYLE_CSS = """
 
       /* ---------------------------------------------------- Page subtitle */
       .page-sub {
-        position: relative;
-        margin: 10px 0 20px 0;
-        padding: 14px 20px 14px 18px;
-        background: linear-gradient(115deg, #EAF3F8 0%, #F7FBFD 42%, #FFFFFF 100%);
-        border: 1px solid var(--line);
-        border-left: 4px solid var(--brand);
+        margin: 12px 0 22px 0;
+        padding: 14px 18px;
+        background: var(--tile);
+        border: none;
         border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(21, 48, 77, 0.06);
         color: var(--muted);
         font-size: 0.95rem;
         line-height: 1.6;
@@ -312,9 +332,9 @@ STYLE_CSS = """
       .risk-card {
         font-family: inherit;
         border: 1px solid var(--line);
-        border-radius: 16px;
+        border-radius: 14px;
         background: #FFFFFF;
-        box-shadow: 0 8px 24px rgba(21, 48, 77, 0.08);
+        box-shadow: none;
         overflow: hidden;
         margin: 0.2rem 0 0.8rem 0;
       }
@@ -324,18 +344,18 @@ STYLE_CSS = """
         gap: 12px;
         padding: 16px 22px;
         border-bottom: 1px solid var(--line);
-        background: linear-gradient(90deg, #F6FAFC 0%, #FFFFFF 100%);
+        background: #FFFFFF;
       }
       .risk-dot {
-        width: 11px;
-        height: 11px;
+        width: 10px;
+        height: 10px;
         border-radius: 50%;
         display: inline-block;
         flex: 0 0 auto;
       }
       .risk-head-title {
-        font-size: 1.12rem;
-        font-weight: 800;
+        font-size: 1.05rem;
+        font-weight: 700;
         color: var(--ink);
         letter-spacing: -0.02em;
       }
@@ -344,9 +364,9 @@ STYLE_CSS = """
         padding: 6px 16px;
         border-radius: 999px;
         color: #FFFFFF;
-        font-weight: 700;
-        font-size: 0.9rem;
-        letter-spacing: 0.01em;
+        font-weight: 600;
+        font-size: 0.88rem;
+        letter-spacing: 0;
         white-space: nowrap;
       }
       .risk-hero {
@@ -357,32 +377,32 @@ STYLE_CSS = """
         padding: 20px 22px 6px 22px;
       }
       .risk-prob-label {
-        font-size: 0.76rem;
-        font-weight: 700;
-        letter-spacing: 0.07em;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.09em;
         text-transform: uppercase;
         color: var(--muted);
         margin-bottom: 2px;
       }
       .risk-prob-value {
-        font-size: 2.75rem;
-        font-weight: 800;
+        font-size: 2.6rem;
+        font-weight: 700;
         line-height: 1.05;
         letter-spacing: -0.03em;
       }
       .risk-verdict-title {
-        font-size: 1.15rem;
+        font-size: 1.1rem;
         font-weight: 700;
         color: var(--ink);
       }
-      .risk-verdict-text { color: var(--muted); font-size: 0.95rem; }
+      .risk-verdict-text { color: var(--muted); font-size: 0.93rem; }
       .risk-meter { padding: 14px 22px 2px 22px; }
       .risk-track {
         position: relative;
         display: flex;
-        height: 14px;
+        height: 12px;
         border-radius: 999px;
-        background: #EEF2F6;
+        background: #ECECEC;
       }
       .risk-seg { height: 100%; }
       .risk-seg:first-child { border-radius: 999px 0 0 999px; }
@@ -391,7 +411,7 @@ STYLE_CSS = """
         position: absolute;
         top: -6px;
         width: 4px;
-        height: 26px;
+        height: 24px;
         border-radius: 2px;
         background: var(--ink);
         transform: translateX(-50%);
@@ -400,7 +420,7 @@ STYLE_CSS = """
       .risk-scale {
         display: flex;
         justify-content: space-between;
-        font-size: 0.76rem;
+        font-size: 0.74rem;
         color: var(--muted);
         margin-top: 9px;
       }
@@ -417,62 +437,67 @@ STYLE_CSS = """
         align-items: flex-start;
         margin-bottom: 7px;
         color: var(--ink);
-        font-size: 0.94rem;
+        font-size: 0.92rem;
         line-height: 1.45;
       }
       .risk-legend li .risk-dot { margin-top: 6px; }
       .risk-foot {
         padding: 14px 22px;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 0.93rem;
         border-top: 1px solid var(--line);
       }
 
       /* ------------------------------------------------------- Sidebar nav */
       [data-testid="stSidebarNavLink"] {
-        border-radius: 10px;
+        border-radius: 8px;
         border: 1px solid var(--line);
         background: #FFFFFF;
-        padding: 10px 14px;
-        margin-bottom: 6px;
+        padding: 9px 12px;
+        margin-bottom: 4px;
         font-weight: 600;
         color: var(--ink);
-        box-shadow: 0 1px 2px rgba(21, 48, 77, 0.05);
-        transition: transform 0.15s ease, box-shadow 0.15s ease,
-          border-color 0.15s ease, background 0.15s ease;
+        box-shadow: none;
+        transition: transform 0.15s ease, border-color 0.15s ease,
+          background 0.15s ease, color 0.15s ease;
       }
       [data-testid="stSidebarNavLink"] span[label] { color: inherit; }
       [data-testid="stSidebarNavLink"]:hover {
-        border-color: var(--brand);
-        color: var(--brand);
-        box-shadow: 0 6px 14px rgba(46, 134, 171, 0.18);
-        transform: translateY(-1px);
+        border-color: #C9C9CC;
+        background: #FAFAFA;
+        color: var(--ink);
+        transform: none;
       }
       [data-testid="stSidebarNavLink"][aria-current="page"] {
-        background: linear-gradient(90deg, #2E86AB, #1F6A8A);
-        border-color: #1F6A8A;
-        color: #FFFFFF;
-        box-shadow: 0 6px 16px rgba(46, 134, 171, 0.30);
+        background: var(--brand-soft);
+        border-color: var(--brand-line);
+        color: var(--brand-dark);
+        font-weight: 700;
+        box-shadow: none;
       }
       [data-testid="stSidebarNavLink"][aria-current="page"]:hover {
-        color: #FFFFFF;
+        color: var(--brand-dark);
       }
 
       /* ------------------------------------------------------------ Sidebar */
+      section[data-testid="stSidebar"] {
+        background: #FFFFFF;
+        border-right: 1px solid var(--line);
+      }
       .brand-title {
-        font-size: 1.15rem;
-        font-weight: 800;
+        font-size: 1.08rem;
+        font-weight: 700;
         color: var(--ink);
         letter-spacing: -0.02em;
       }
       .brand-subtitle {
-        font-size: 0.78rem;
+        font-size: 0.76rem;
         color: var(--muted);
         margin-top: 2px;
       }
       .filter-heading {
-        font-size: 0.74rem;
-        font-weight: 700;
+        font-size: 0.7rem;
+        font-weight: 600;
         letter-spacing: 0.1em;
         text-transform: uppercase;
         color: var(--muted);
@@ -729,21 +754,21 @@ def portfolio_kpis(df: pd.DataFrame) -> dict:
 def _build_template() -> go.layout.Template:
     return go.layout.Template(
         layout=go.Layout(
-            font=dict(family=FONT, size=13, color=TEXT),
+            font=dict(family=FONT, size=12.5, color="#333333"),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            colorway=[PRIMARY, DEFAULT_RED, "#7FB2C7", "#F2A65A", "#4B7F52"],
+            colorway=[PRIMARY, SECONDARY, "#0F7A4C", "#C7E9D8", "#5B8C74"],
             xaxis=dict(
                 showgrid=False, zeroline=False, linecolor=GRID,
-                tickfont=dict(size=12, color=MUTED), title_font=dict(size=12.5, color=TEXT),
+                tickfont=dict(size=11.5, color=MUTED), title_font=dict(size=12, color="#333333"),
             ),
             yaxis=dict(
                 showgrid=False, zeroline=False, linecolor=GRID,
-                tickfont=dict(size=12, color=MUTED), title_font=dict(size=12.5, color=TEXT),
+                tickfont=dict(size=11.5, color=MUTED), title_font=dict(size=12, color="#333333"),
             ),
-            legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=12, color=TEXT)),
+            legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=11.5, color=TEXT)),
             hoverlabel=dict(
-                bgcolor="#FFFFFF", font_size=13, font_family=FONT, font_color=TEXT,
+                bgcolor="#FFFFFF", font_size=12.5, font_family=FONT, font_color=TEXT,
                 bordercolor=GRID,
             ),
             margin=dict(l=56, r=28, t=56, b=46),
@@ -804,7 +829,7 @@ def chart_outcomes(df: pd.DataFrame) -> go.Figure:
         {
             "Outcome": [PAID_LABEL, DEFAULT_LABEL],
             "Loans": [paid, defaulted],
-            "Colour": [PRIMARY, DEFAULT_RED],
+            "Colour": [PRIMARY, SECONDARY],
         }
     )
     summary["share"] = summary["Loans"] / total * 100.0 if total else np.nan
@@ -815,7 +840,7 @@ def chart_outcomes(df: pd.DataFrame) -> go.Figure:
         x="Outcome",
         y="Loans",
         color="Outcome",
-        color_discrete_map={PAID_LABEL: PRIMARY, DEFAULT_LABEL: DEFAULT_RED},
+        color_discrete_map={PAID_LABEL: PRIMARY, DEFAULT_LABEL: SECONDARY},
         text=summary["Loans"].map(lambda v: f"{v:,}"),
         custom_data=["default_rate", "Loans", "share"],
         labels={"Loans": "Number of loans", "Outcome": ""},
@@ -823,6 +848,7 @@ def chart_outcomes(df: pd.DataFrame) -> go.Figure:
     fig.update_traces(
         textposition="outside",
         cliponaxis=False,
+        textfont=dict(color=TEXT, size=12),
         hovertemplate=(
             "%{x}<br>Loans: %{customdata[1]:,}<br>"
             "Share of selection: %{customdata[2]:.2f}%<br>"
@@ -850,6 +876,7 @@ def chart_default_rate_bars(summary: pd.DataFrame, x_col: str = "band") -> go.Fi
     fig.update_traces(
         textposition="outside",
         cliponaxis=False,
+        textfont=dict(color=TEXT, size=12),
         hovertemplate=_rate_hovertemplate(x_col.replace("_", " ").title()),
     )
     top = float(np.nanmax(summary["default_rate"])) if len(summary) else 1.0
@@ -876,6 +903,7 @@ def chart_horizontal_rates(
     fig.update_traces(
         textposition="outside",
         cliponaxis=False,
+        textfont=dict(color=TEXT, size=12),
         hovertemplate=_rate_hovertemplate(category_label, category_axis="y"),
     )
     top = float(np.nanmax(summary["default_rate"])) if len(summary) else 1.0
@@ -984,7 +1012,7 @@ def column_limits(df: pd.DataFrame, column: str) -> tuple[float, float]:
 RISK_LOW = 0.20
 RISK_HIGH = 0.50
 
-RISK_GREEN = "#22C55D"
+RISK_GREEN = "#148553"
 RISK_AMBER = "#F59E0B"
 RISK_RED = "#EF4444"
 
@@ -997,8 +1025,8 @@ RISK_BANDS = [
         "legend": "comfortably safe, routine monitoring",
         "verdict": "Likely to be repaid",
         "description": "Low likelihood of default",
-        "foot_bg": "#EAF9F0",
-        "foot_fg": "#14663A",
+        "foot_bg": "#E4F2EC",
+        "foot_fg": "#0F7A4C",
     },
     {
         "label": "Medium risk",

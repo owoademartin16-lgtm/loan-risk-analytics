@@ -1,9 +1,11 @@
 [theme]
-primaryColor = "#2E86AB"
+base = "light"
+primaryColor = "#148553"
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F4F7FA"
-textColor = "#15304D"
-font = "sans serif"
+secondaryBackgroundColor = "#F3F3F3"
+textColor = "#111111"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
 
 [server]
 maxUploadSize = 5
