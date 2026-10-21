@@ -25,7 +25,7 @@ re-cleans the data and never writes to either asset.
 
   | Chart | Notes |
   |---|---|
-  | Outcome Distribution | Fully paid (`#148553`) vs defaulted (`#8CB9A5`) |
+  | Outcome Distribution | Fully paid (`#148553`) vs defaulted (`#0F7A4C`) |
   | Default Rate By issue year | Line chart; warns that the newest cohorts are understated |
   | Default Rate By loan amount band | 0–5k … 30k+ |
   | Default Rate By FICO band | Below 580 … 740+ (empty bands are dropped) |
@@ -189,16 +189,21 @@ The app follows one flat, emerald design system:
 | Token | Value | Where it is used |
 |---|---|---|
 | Primary | `#148553` | main series, submit button, active navigation |
-| Secondary | `#8CB9A5` | the second series (defaulted) |
+| Secondary | `#0F7A4C` | the second series (defaulted) |
 | Ink | `#111111` | headings, KPI values, risk marker |
 | Muted | `#7A7F87` | captions, axis labels, secondary text |
 | Hairline | `#E4E4E6` | card borders, rules |
-| Tile | `#F3F3F3` | KPI tiles, subtitle box, tab track |
-| Backdrop | `#DDDDDF` | the page behind the white content sheet |
+| Tile | `#F3F3F3` | subtitle box, tab track |
+| Backdrop | `#F7F7F8` | the page behind the white content sheet |
+
+The KPI row carries one colour story per metric — total loans in an emerald
+tile (`#E4F2EC` / `#0F7A4C`), defaulted loans in a red tile (`#FBEAEA` /
+`#C0392B`), the overall default rate in an amber tile (`#FBF1DE` / `#B07203`)
+and the average loan amount in a neutral grey tile (`#F3F3F3` / `#111111`).
 
 Typography is **Inter** — loaded from Google Fonts, with Helvetica Neue as the
 offline fallback — and every chart uses the same typeface and colourway
-(`#148553`, `#8CB9A5`, `#0F7A4C`, `#C7E9D8`, `#5B8C74`).
+(`#148553`, `#0F7A4C`, `#C7E9D8`, `#5B8C74`, `#9BC9B4`).
 
 ### Layout details
 
@@ -206,8 +211,8 @@ offline fallback — and every chart uses the same typeface and colourway
   sheet with rounded corners and a soft shadow.
 * Each page opens with a subtitle set in a flat grey box (rounded corners, no
   border).
-* The KPI cards are flat `#F3F3F3` tiles without borders or shadows: a small
-  uppercase label and the number, nothing else.
+* The KPI cards are tinted tiles without borders or shadows: a small uppercase
+  label and the number, coloured per metric.
 * The charts are drawn without gridlines — only the axis lines remain, so the
   bars carry the reading.
 * The risk bands keep their semantics: green `#148553` (low), amber `#F59E0B`

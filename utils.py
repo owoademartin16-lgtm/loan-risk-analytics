@@ -51,7 +51,7 @@ REQUIRED_COLUMNS = [
 # Palette
 # ---------------------------------------------------------------------------
 PRIMARY = "#148553"      # main colour: fully paid / primary series
-SECONDARY = "#8CB9A5"    # muted green: the second series (defaulted)
+SECONDARY = "#0F7A4C"    # deep emerald: the second series (defaulted)
 TEXT = "#111111"
 MUTED = "#7A7F87"
 GRID = "#E4E4E6"
@@ -85,10 +85,24 @@ STYLE_CSS = """
         --muted: #7A7F87;
         --line: #E4E4E6;
         --tile: #F3F3F3;
-        --page: #DDDDDF;
+        --page: #F7F7F8;
         --green: #148553;
         --amber: #E0A200;
         --red: #D64545;
+        /* KPI tints: one colour story per metric. */
+        --kpi-label: #5C6269;
+        --kpi-green-bg: #E4F2EC;
+        --kpi-green-bg-hover: #D8EDE4;
+        --kpi-green-fg: #0F7A4C;
+        --kpi-amber-bg: #FBF1DE;
+        --kpi-amber-bg-hover: #F8EBD2;
+        --kpi-amber-fg: #B07203;
+        --kpi-red-bg: #FBEAEA;
+        --kpi-red-bg-hover: #F7E1E1;
+        --kpi-red-fg: #C0392B;
+        --kpi-grey-bg: #F3F3F3;
+        --kpi-grey-bg-hover: #EFEFEF;
+        --kpi-grey-fg: #111111;
       }
 
       /* Typography: one clean grotesque across the whole app. */
@@ -139,7 +153,7 @@ STYLE_CSS = """
       /* ---------------------------------------------------------------- KPI */
       div[data-testid="stMetric"] {
         position: relative;
-        background: var(--tile);
+        background: var(--kpi-grey-bg);
         border: none;
         border-radius: 12px;
         padding: 16px 18px 14px 18px;
@@ -149,21 +163,47 @@ STYLE_CSS = """
       }
       div[data-testid="stMetric"]:hover {
         transform: translateY(-2px);
-        background: #EFEFEF;
+        background: var(--kpi-grey-bg-hover);
       }
       [data-testid="stMetricLabel"] p {
         font-size: 0.71rem !important;
         font-weight: 600 !important;
         letter-spacing: 0.09em !important;
         text-transform: uppercase;
-        color: var(--muted) !important;
+        color: var(--kpi-label) !important;
       }
       div[data-testid="stMetricValue"] {
-        color: var(--ink) !important;
+        color: var(--kpi-grey-fg) !important;
         font-weight: 700 !important;
         letter-spacing: -0.03em;
         font-size: 1.85rem;
       }
+      /* One tint per KPI: total loans (emerald), defaulted loans (red),
+         default rate (amber), average loan amount (neutral). */
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(1)
+        div[data-testid="stMetric"] { background: var(--kpi-green-bg); }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(1)
+        div[data-testid="stMetric"]:hover { background: var(--kpi-green-bg-hover); }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(1)
+        [data-testid="stMetricValue"] { color: var(--kpi-green-fg) !important; }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
+        div[data-testid="stMetric"] { background: var(--kpi-red-bg); }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
+        div[data-testid="stMetric"]:hover { background: var(--kpi-red-bg-hover); }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
+        [data-testid="stMetricValue"] { color: var(--kpi-red-fg) !important; }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
+        div[data-testid="stMetric"] { background: var(--kpi-amber-bg); }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
+        div[data-testid="stMetric"]:hover { background: var(--kpi-amber-bg-hover); }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
+        [data-testid="stMetricValue"] { color: var(--kpi-amber-fg) !important; }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
+        div[data-testid="stMetric"] { background: var(--kpi-grey-bg); }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
+        div[data-testid="stMetric"]:hover { background: var(--kpi-grey-bg-hover); }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
+        [data-testid="stMetricValue"] { color: var(--kpi-grey-fg) !important; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
         div[data-testid="stMetric"] { animation-delay: 0.07s; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
@@ -757,7 +797,7 @@ def _build_template() -> go.layout.Template:
             font=dict(family=FONT, size=12.5, color="#333333"),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            colorway=[PRIMARY, SECONDARY, "#0F7A4C", "#C7E9D8", "#5B8C74"],
+            colorway=[PRIMARY, SECONDARY, "#C7E9D8", "#5B8C74", "#9BC9B4"],
             xaxis=dict(
                 showgrid=False, zeroline=False, linecolor=GRID,
                 tickfont=dict(size=11.5, color=MUTED), title_font=dict(size=12, color="#333333"),
