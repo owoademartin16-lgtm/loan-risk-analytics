@@ -73,7 +73,7 @@ MIN_SAMPLE_SIZE = 100
 # rendered on the default page, so the CSS has to be injected from the page
 # scripts (and from the sidebar) to be present everywhere.
 STYLE_CSS = """
-      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
       :root {
         --brand: #148553;
@@ -91,7 +91,7 @@ STYLE_CSS = """
         --amber: #E0A200;
         --red: #D64545;
         /* KPI accents: one colour story per metric. */
-        --kpi-label: #4E555E;
+        --kpi-label: #3C434B;
         --kpi-green-bar: #148553;
         --kpi-green-fg: #0B6B41;
         --kpi-amber-bar: #E0A200;
@@ -197,14 +197,14 @@ STYLE_CSS = """
       }
       [data-testid="stMetricLabel"] p {
         font-size: 0.71rem !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         letter-spacing: 0.09em !important;
         text-transform: uppercase;
         color: var(--kpi-label) !important;
       }
       div[data-testid="stMetricValue"] {
         color: var(--kpi-grey-fg) !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         letter-spacing: -0.03em;
         font-size: 1.85rem;
       }

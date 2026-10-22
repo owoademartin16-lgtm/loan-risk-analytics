@@ -204,9 +204,9 @@ edge and one colour story per metric — total loans in emerald (`#148553` /
 rate in amber (`#E0A200` / `#96620A`) and the average loan amount in a neutral
 grey (`#8A9099` / `#1F2429`).
 
-Typography is **Inter** — loaded from Google Fonts, with Helvetica Neue as the
-offline fallback — and every chart uses the same typeface and colourway
-(`#148553`, `#0F7A4C`, `#C7E9D8`, `#5B8C74`, `#9BC9B4`).
+Typography is **Inter** — loaded from Google Fonts (400–800), with Helvetica
+Neue as the offline fallback — and every chart uses the same typeface and
+colourway (`#148553`, `#0F7A4C`, `#C7E9D8`, `#5B8C74`, `#9BC9B4`).
 
 ### Layout details
 
@@ -216,8 +216,8 @@ offline fallback — and every chart uses the same typeface and colourway
 * Each page opens with a subtitle set in a flat grey box (rounded corners, no
   border).
 * The KPI cards are white cards with a hairline border and a 6px coloured bar
-  down the left edge: a small uppercase label and the number, coloured per
-  metric.
+  down the left edge: a small uppercase label in bold (`#3C434B`) and the
+  number in extra bold, coloured per metric.
 * The charts are drawn without gridlines — only the axis lines remain, so the
   bars carry the reading.
 * The risk bands keep their semantics: green `#148553` (low), amber `#F59E0B`
