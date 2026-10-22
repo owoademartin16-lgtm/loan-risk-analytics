@@ -86,19 +86,15 @@ STYLE_CSS = """
         --line: #E2E5E9;
         --tile: #F4F6F5;
         --page: #FFFFFF;
-        --sidebar-bg: #F3F5F4;
+        --sidebar-bg: #E7EBEA;
         --green: #0F7A52;
         --amber: #B45309;
         --red: #C0392B;
-        /* The KPI band is the one dark surface on the page: white numbers,
-           each in the colour of its own metric. */
-        --kpi-bg: #14181D;
-        --kpi-label: rgba(255, 255, 255, 0.62);
-        --kpi-divider: rgba(255, 255, 255, 0.10);
-        --kpi-green: #3BC48C;
-        --kpi-red: #E8695C;
-        --kpi-amber: #E9A93C;
-        --kpi-slate: #A3AEB9;
+        /* The KPI rules carry one colour per metric. */
+        --kpi-green: #1E9E6A;
+        --kpi-red: #D64550;
+        --kpi-amber: #C98A17;
+        --kpi-slate: #55606B;
       }
 
       /* Typography: one clean grotesque across the whole app.  Streamlit draws
@@ -149,7 +145,26 @@ STYLE_CSS = """
         letter-spacing: -0.012em;
       }
       [data-testid="stMain"] p { color: var(--muted); }
-      [data-testid="stMain"] [data-testid="stCaptionContainer"] p { font-size: 0.84rem; }
+      /* The selection line under the KPI row.  Streamlit draws captions at
+         60 % opacity, which washes the text out to a blurry grey, so the
+         container is forced back to full opacity and the text to true black. */
+      [data-testid="stMain"] [data-testid="stCaptionContainer"] {
+        opacity: 1 !important;
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+      }
+      [data-testid="stMain"] [data-testid="stCaptionContainer"] p {
+        color: #000000 !important;
+        font-size: 0.84rem;
+        font-weight: 500;
+        -webkit-font-smoothing: subpixel-antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      /* The filter note in the sidebar keeps its muted colour, but at full
+         strength instead of Streamlit's 60 %. */
+      [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+        opacity: 1 !important;
+      }
       /* Button labels keep the colour, weight and size of the button
          itself: white on the emerald primary button, ink on the secondary
          ones. */
@@ -166,72 +181,74 @@ STYLE_CSS = """
       }
 
       /* ---------------------------------------------------------------- KPI */
-      /* One dark stat band holds the four metrics: hairline dividers between
-         the cells, a soft uppercase label and the number in the colour of its
-         own metric. */
-      .st-key-kpi_row {
-        background: var(--kpi-bg);
-        border-radius: 16px;
-        padding: 2px 0;
-        overflow: hidden;
-      }
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] {
-        gap: 0 !important;
-        flex-wrap: wrap;
-      }
-      .st-key-kpi_row [data-testid="stColumn"] {
-        box-sizing: border-box;
-        padding: 20px;
-        transition: background 0.15s ease;
-      }
-      .st-key-kpi_row [data-testid="stColumn"]:hover {
-        background: rgba(255, 255, 255, 0.045);
-      }
-      .st-key-kpi_row [data-testid="stColumn"] + [data-testid="stColumn"] {
-        border-left: 1px solid var(--kpi-divider);
-      }
+      /* Four quiet stat cards: a near-black label, a black number and a
+         short rule in the colour of the metric underneath it. */
       div[data-testid="stMetric"] {
-        background: transparent;
-        border: none;
-        padding: 0;
+        position: relative;
+        background: #FFFFFF;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 18px 20px 20px 20px;
         box-shadow: none;
+        transition: transform 0.15s ease, box-shadow 0.15s ease,
+          border-color 0.15s ease;
         animation: kpiIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
       }
+      div[data-testid="stMetric"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(20, 24, 29, 0.07);
+        border-color: #D5D9DD;
+      }
+      /* The metric's colour, drawn as a short rule under the number. */
+      div[data-testid="stMetric"]::after {
+        content: "";
+        display: block;
+        width: 38px;
+        height: 4px;
+        margin-top: 14px;
+        border-radius: 999px;
+        background: var(--kpi-slate);
+      }
       [data-testid="stMetricLabel"] p {
-        font-size: 0.68rem !important;
+        font-size: 0.7rem !important;
         font-weight: 700 !important;
-        letter-spacing: 0.11em !important;
+        letter-spacing: 0.1em !important;
         text-transform: uppercase;
-        color: var(--kpi-label) !important;
+        color: var(--ink) !important;
       }
       div[data-testid="stMetricValue"] {
-        color: #FFFFFF !important;
+        color: #000000 !important;
         font-weight: 800 !important;
-        letter-spacing: -0.03em;
-        font-size: 2rem;
-        line-height: 1.15;
-        margin-top: 6px;
+        letter-spacing: -0.035em;
+        font-size: 2.05rem;
+        line-height: 1.1;
+        margin-top: 8px;
       }
       /* One colour per KPI: total loans (emerald), defaulted loans (red),
          default rate (amber), average loan amount (neutral). */
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(1)
-        [data-testid="stMetricValue"] { color: var(--kpi-green) !important; }
+        div[data-testid="stMetric"]::after { background: var(--kpi-green); }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
-        [data-testid="stMetricValue"] { color: var(--kpi-red) !important; }
+        div[data-testid="stMetric"]::after { background: var(--kpi-red); }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
-        [data-testid="stMetricValue"] { color: var(--kpi-amber) !important; }
+        div[data-testid="stMetric"]::after { background: var(--kpi-amber); }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
-        [data-testid="stMetricValue"] { color: var(--kpi-slate) !important; }
+        div[data-testid="stMetric"]::after { background: var(--kpi-slate); }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
         div[data-testid="stMetric"] { animation-delay: 0.07s; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
         div[data-testid="stMetric"] { animation-delay: 0.14s; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
         div[data-testid="stMetric"] { animation-delay: 0.21s; }
-      /* On a narrow screen the band folds into two rows of two. */
+      /* Narrow screens: the KPI row folds into two rows of two so the
+         numbers always have room. */
       @media (max-width: 1279px) {
+        .st-key-kpi_row [data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
         .st-key-kpi_row [data-testid="stColumn"] { flex: 1 1 50%; }
-        .st-key-kpi_row [data-testid="stColumn"]:nth-child(3) { border-left: none; }
+      }
+      @media (max-width: 620px) {
+        .st-key-kpi_row [data-testid="stColumn"] { flex: 1 1 100%; }
+        div[data-testid="stMetricValue"] { font-size: 1.7rem; }
       }
 
       /* -------------------------------------------------------- Chart cards */
@@ -916,11 +933,11 @@ def chart_default_rate_bars(summary: pd.DataFrame, x_col: str = "band") -> go.Fi
         x=x_col,
         y="default_rate",
         text=_percent_labels(summary["default_rate"]),
-        color_discrete_sequence=[PRIMARY],
         custom_data=["default_rate", "total_loans", "defaulted"],
         labels={"default_rate": "Default rate (%)", x_col: ""},
     )
     fig.update_traces(
+        marker=dict(color=SECONDARY),
         textposition="outside",
         cliponaxis=False,
         textfont=dict(color=TEXT, size=12),
@@ -943,11 +960,11 @@ def chart_horizontal_rates(
         y=y_col,
         orientation="h",
         text=_percent_labels(summary["default_rate"]),
-        color_discrete_sequence=[PRIMARY],
         custom_data=["default_rate", "total_loans", "defaulted"],
         labels={"default_rate": "Default rate (%)", y_col: ""},
     )
     fig.update_traces(
+        marker=dict(color=SECONDARY),
         textposition="outside",
         cliponaxis=False,
         textfont=dict(color=TEXT, size=12),
@@ -966,13 +983,12 @@ def chart_year_trend(summary: pd.DataFrame) -> go.Figure:
         x="issue_year",
         y="default_rate",
         markers=True,
-        color_discrete_sequence=[PRIMARY],
         custom_data=["default_rate", "total_loans", "defaulted"],
         labels={"issue_year": "Loan issue year", "default_rate": "Default rate (%)"},
     )
     fig.update_traces(
-        line=dict(width=2.5),
-        marker=dict(size=7),
+        line=dict(width=2.5, color=SECONDARY),
+        marker=dict(size=8, color=SECONDARY, line=dict(width=2, color="#FFFFFF")),
         hovertemplate=(
             "Issue year: %{x}<br>"
             "Default rate: %{customdata[0]:.2f}%<br>"

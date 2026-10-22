@@ -186,26 +186,28 @@ injected with `st.html()` by `app.py` (sidebar) and by each page script — with
 default page, so the CSS has to be injected from the page scripts as well.
 
 The app follows one flat design system: a white canvas, a soft neutral rail
-and a single dark stat band, with colour used only where it carries meaning.
+and quiet white stat cards, with colour used only where it carries meaning.
 
 | Token | Value | Where it is used |
 |---|---|---|
 | Ink | `#14181D` | headings, KPI labels, risk marker |
+| Black | `#000000` | the four KPI numbers and the selection line under the KPI row |
 | Muted | `#5B6570` | captions, axis labels, secondary text |
 | Hairline | `#E2E5E9` | card borders, rules |
 | Canvas | `#FFFFFF` | the page background behind the content |
-| Rail | `#F3F5F4` | the filter panel, a soft neutral so the page is not all white |
+| Rail | `#E7EBEA` | the filter panel, a soft neutral so the page is not all white |
 | Tile | `#F4F6F5` | subtitle box, tab track |
 | Emerald | `#0F7A52` | the brand: the "Fully Paid" series, submit button, active navigation |
-| Risk | `#C0392B` | the "Defaulted" series and the high-risk band |
+| Risk | `#C0392B` | the "Defaulted" series, every default-rate bar and the high-risk band |
 | Amber | `#B45309` | the medium-risk band |
-| Stat band | `#14181D` | the KPI band, the one dark surface on the page |
 
-The KPI row is a single dark band: four metrics in one rounded panel, hairline
-dividers between the cells, a soft uppercase label and the number in the colour
-of its metric — emerald `#3BC48C` for total loans, red `#E8695C` for defaulted
-loans, amber `#E9A93C` for the overall default rate and slate `#A3AEB9` for the
-average loan amount. Below 1280 px the band folds into two rows of two.
+The KPI row is four quiet stat cards: a white panel with a hairline border and
+a 16 px radius, an uppercase near-black label, the number in black at weight
+800, and a short 38 × 4 px rule in the colour of the metric underneath it —
+emerald `#1E9E6A` for total loans, red `#D64550` for defaulted loans, amber
+`#C98A17` for the overall default rate and slate `#55606B` for the average loan
+amount. Below 1280 px the row folds into two rows of two, and below 620 px into
+one column.
 
 Typography is **Inter** — loaded from Google Fonts (400–800), with Helvetica
 Neue as the offline fallback — and every chart uses the same typeface and
@@ -214,15 +216,21 @@ colourway (`#0F7A52`, `#C0392B`, `#5EA98A`, `#8FC7AE`, `#C7E2D5`).
 ### Layout details
 
 * The content area is a plain white canvas; the sidebar is the only tinted
-  panel (a soft neutral, `#F3F5F4`).
+  panel (a soft neutral, `#E7EBEA`).
 * Each page opens with a subtitle set in a flat grey box (rounded corners, no
   border).
-* The KPI cards are the dark stat band described above: one panel, four
-  numbers, each in the colour of its metric.
+* The KPI cards are the four white stat cards described above: a black number
+  and a coloured rule that names the metric.
+* The selection line under the KPI row ("Showing … of … loans") is printed in
+  true black at full opacity — Streamlit's default 60 % caption opacity is
+  cancelled so the line can never read as washed-out grey.
 * The charts are drawn without gridlines — only the axis lines remain, so the
   bars carry the reading.
 * The outcome chart pairs emerald "Fully Paid" with red "Defaulted", so the
   two outcomes can never be mistaken for one another.
+* Every default-rate chart — the trend line in "Overview" and all of the bars
+  in "Credit Risk" and "Purpose & Geography" — shares one colour, the risk red
+  `#C0392B`, so a bar looks the same in every chart.
 * The risk bands keep their semantics: green `#0F7A52` (low), amber `#B45309`
   (medium) and red `#C0392B` (high).
 
