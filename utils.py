@@ -64,6 +64,25 @@ DEFAULT_LABEL = "Defaulted"
 
 MIN_SAMPLE_SIZE = 100
 
+# The columns the app actually reads.  The parquet also carries id, revenue,
+# experience_c, zip_code, title and fico_group; none of them is used, so they
+# are never read into memory.
+LOAD_COLUMNS = [
+    "Default",
+    "issue_d",
+    "loan_amnt",
+    "fico_n",
+    "dti_n",
+    "purpose",
+    "addr_state",
+    "emp_length",
+    "home_ownership_n",
+]
+
+# The text columns hold a handful of distinct values across 1.3 M rows, so
+# they are stored as categories: same values, a fraction of the memory.
+CATEGORY_COLUMNS = ["purpose", "addr_state", "emp_length", "home_ownership_n"]
+
 
 # ---------------------------------------------------------------------------
 # Global styling
@@ -641,7 +660,10 @@ def load_data() -> pd.DataFrame:
     """Read the cleaned loan data from parquet and validate its structure.
 
     The only derived column is ``issue_year``, which is needed to chart the
-    default rate over time; no other transformation is applied.
+    default rate over time; no other transformation is applied.  The frame is
+    slimmed down while it is read - only the columns the app uses, narrow
+    number types and categories for the low-cardinality text columns - so the
+    app fits comfortably in a small cloud container.
     """
     if not DATA_PATH.exists():
         raise FileNotFoundError(
@@ -649,7 +671,7 @@ def load_data() -> pd.DataFrame:
             "dataset at data/loans_clean.parquet."
         )
 
-    df = pd.read_parquet(DATA_PATH)
+    df = pd.read_parquet(DATA_PATH, columns=LOAD_COLUMNS)
 
     missing = [col for col in REQUIRED_COLUMNS if col not in df.columns]
     if missing:
@@ -660,6 +682,24 @@ def load_data() -> pd.DataFrame:
 
     issued = pd.to_datetime(df["issue_d"], format="%b-%Y", errors="coerce")
     df["issue_year"] = issued.dt.year.astype("Int16")
+    df = df.drop(columns="issue_d")
+
+    # Narrower storage for the very same values.  dti_n keeps its float64
+    # type: its median is the default in the prediction form, and rounding it
+    # would change the numbers the model is asked about.
+    df["Default"] = df["Default"].astype("int8")
+    df["loan_amnt"] = df["loan_amnt"].astype("int32")
+    df["fico_n"] = df["fico_n"].astype("float32")
+    for column in CATEGORY_COLUMNS:
+        df[column] = df[column].astype("category")
+
+    # The raw missing marker ("NI") is relabelled "Missing" in the charts, so
+    # that label has to be one of the categories already.
+    if EMP_LENGTH_MISSING_LABEL not in df["emp_length"].cat.categories:
+        df["emp_length"] = df["emp_length"].cat.add_categories(
+            [EMP_LENGTH_MISSING_LABEL]
+        )
+
     return df
 
 
