@@ -52,9 +52,9 @@ REQUIRED_COLUMNS = [
 # ---------------------------------------------------------------------------
 PRIMARY = "#148553"      # main colour: fully paid / primary series
 SECONDARY = "#0F7A4C"    # deep emerald: the second series (defaulted)
-TEXT = "#111111"
-MUTED = "#7A7F87"
-GRID = "#E4E4E6"
+TEXT = "#1F2429"         # soft near-black for chart text
+MUTED = "#5F6771"        # secondary chart text (axis ticks, captions)
+GRID = "#E0E2E5"
 FONT = "Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif"
 
 PAID_LABEL = "Fully Paid"
@@ -78,31 +78,32 @@ STYLE_CSS = """
       :root {
         --brand: #148553;
         --brand-dark: #0F7A4C;
-        --brand-soft: #E4F2EC;
-        --brand-line: #BFE3D0;
+        --brand-soft: #CBE8D9;
+        --brand-line: #A9D8C1;
         --danger: #D64545;
-        --ink: #111111;
-        --muted: #7A7F87;
-        --line: #E4E4E6;
+        --ink: #1F2429;
+        --muted: #5F6771;
+        --line: #E0E2E5;
         --tile: #F3F3F3;
-        --page: #F7F7F8;
+        --page: #FFFFFF;
+        --sidebar-bg: #E8F1EC;
         --green: #148553;
         --amber: #E0A200;
         --red: #D64545;
         /* KPI tints: one colour story per metric. */
-        --kpi-label: #5C6269;
-        --kpi-green-bg: #E4F2EC;
-        --kpi-green-bg-hover: #D8EDE4;
-        --kpi-green-fg: #0F7A4C;
-        --kpi-amber-bg: #FBF1DE;
-        --kpi-amber-bg-hover: #F8EBD2;
-        --kpi-amber-fg: #B07203;
-        --kpi-red-bg: #FBEAEA;
-        --kpi-red-bg-hover: #F7E1E1;
-        --kpi-red-fg: #C0392B;
-        --kpi-grey-bg: #F3F3F3;
-        --kpi-grey-bg-hover: #EFEFEF;
-        --kpi-grey-fg: #111111;
+        --kpi-label: #4E555E;
+        --kpi-green-bg: #D2EDE0;
+        --kpi-green-bg-hover: #C4E6D6;
+        --kpi-green-fg: #0B6B41;
+        --kpi-amber-bg: #FBE8C0;
+        --kpi-amber-bg-hover: #F7DFAD;
+        --kpi-amber-fg: #96620A;
+        --kpi-red-bg: #FBE0DE;
+        --kpi-red-bg-hover: #F7D3D0;
+        --kpi-red-fg: #B3261E;
+        --kpi-grey-bg: #ECEEF1;
+        --kpi-grey-bg-hover: #E5E8EC;
+        --kpi-grey-fg: #1F2429;
       }
 
       /* Typography: one clean grotesque across the whole app.  Streamlit draws
@@ -122,15 +123,16 @@ STYLE_CSS = """
         font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
       }
 
-      /* App frame: a white sheet floating on a soft grey backdrop. */
+      /* App frame: a white canvas with a tinted sidebar panel. */
       [data-testid="stAppViewContainer"] { background: var(--page); }
+      [data-testid="stHeader"] { background: transparent; }
       section.main, [data-testid="stMain"] { background: transparent; }
       .block-container {
-        background: #FFFFFF;
-        border-radius: 18px;
-        box-shadow: 0 18px 46px rgba(17, 17, 17, 0.13);
-        padding: 2.1rem 2.4rem 2.8rem 2.4rem;
-        margin: 1.1rem 0 1.1rem 0;
+        background: transparent;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 1.6rem 2.4rem 2.8rem 2.4rem;
+        margin: 0 auto;
         max-width: 1200px;
       }
       h1, h2, h3 { color: var(--ink); letter-spacing: -0.02em; }
@@ -155,8 +157,8 @@ STYLE_CSS = """
       [data-testid="stMain"] [data-testid="stCaptionContainer"] p { font-size: 0.84rem; }
       [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {
         color: var(--muted);
-        font-size: 0.8rem;
-        line-height: 1.55;
+        font-size: 0.84rem;
+        line-height: 1.6;
       }
 
       /* ---------------------------------------------------------------- KPI */
@@ -512,9 +514,11 @@ STYLE_CSS = """
 
       /* ------------------------------------------------------------ Sidebar */
       section[data-testid="stSidebar"] {
-        background: #FFFFFF;
+        background: var(--sidebar-bg);
         border-right: 1px solid var(--line);
       }
+      [data-testid="stSidebar"] [data-testid="stSidebarContent"],
+      [data-testid="stSidebar"] > div { background: transparent; }
       .brand-title {
         font-size: 1.08rem;
         font-weight: 700;
@@ -785,17 +789,17 @@ def portfolio_kpis(df: pd.DataFrame) -> dict:
 def _build_template() -> go.layout.Template:
     return go.layout.Template(
         layout=go.Layout(
-            font=dict(family=FONT, size=12.5, color="#333333"),
+            font=dict(family=FONT, size=12.5, color=TEXT),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             colorway=[PRIMARY, SECONDARY, "#C7E9D8", "#5B8C74", "#9BC9B4"],
             xaxis=dict(
                 showgrid=False, zeroline=False, linecolor=GRID,
-                tickfont=dict(size=11.5, color=MUTED), title_font=dict(size=12, color="#333333"),
+                tickfont=dict(size=11.5, color=MUTED), title_font=dict(size=12, color=TEXT),
             ),
             yaxis=dict(
                 showgrid=False, zeroline=False, linecolor=GRID,
-                tickfont=dict(size=11.5, color=MUTED), title_font=dict(size=12, color="#333333"),
+                tickfont=dict(size=11.5, color=MUTED), title_font=dict(size=12, color=TEXT),
             ),
             legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=11.5, color=TEXT)),
             hoverlabel=dict(

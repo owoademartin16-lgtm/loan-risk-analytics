@@ -191,16 +191,17 @@ The app follows one flat, emerald design system:
 |---|---|---|
 | Primary | `#148553` | main series, submit button, active navigation |
 | Secondary | `#0F7A4C` | the second series (defaulted) |
-| Ink | `#111111` | headings, KPI values, risk marker |
-| Muted | `#7A7F87` | captions, axis labels, secondary text |
-| Hairline | `#E4E4E6` | card borders, rules |
+| Ink | `#1F2429` | headings, KPI values, risk marker |
+| Muted | `#5F6771` | captions, axis labels, secondary text |
+| Hairline | `#E0E2E5` | card borders, rules |
 | Tile | `#F3F3F3` | subtitle box, tab track |
-| Backdrop | `#F7F7F8` | the page behind the white content sheet |
+| Canvas | `#FFFFFF` | the page background behind the content |
+| Sidebar | `#E8F1EC` | the filter panel, so the page is not all white |
 
 The KPI row carries one colour story per metric — total loans in an emerald
-tile (`#E4F2EC` / `#0F7A4C`), defaulted loans in a red tile (`#FBEAEA` /
-`#C0392B`), the overall default rate in an amber tile (`#FBF1DE` / `#B07203`)
-and the average loan amount in a neutral grey tile (`#F3F3F3` / `#111111`).
+tile (`#D2EDE0` / `#0B6B41`), defaulted loans in a red tile (`#FBE0DE` /
+`#B3261E`), the overall default rate in an amber tile (`#FBE8C0` / `#96620A`)
+and the average loan amount in a neutral grey tile (`#ECEEF1` / `#1F2429`).
 
 Typography is **Inter** — loaded from Google Fonts, with Helvetica Neue as the
 offline fallback — and every chart uses the same typeface and colourway
@@ -208,8 +209,8 @@ offline fallback — and every chart uses the same typeface and colourway
 
 ### Layout details
 
-* The app sits on a soft grey backdrop and the content itself is a white
-  sheet with rounded corners and a soft shadow.
+* The content area is a plain white canvas; the sidebar is the only tinted
+  panel (`#E8F1EC`), so the page reads as one surface with a green rail.
 * Each page opens with a subtitle set in a flat grey box (rounded corners, no
   border).
 * The KPI cards are tinted tiles without borders or shadows: a small uppercase

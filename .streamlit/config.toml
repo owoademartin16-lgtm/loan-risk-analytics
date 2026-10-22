@@ -3,7 +3,7 @@ base = "light"
 primaryColor = "#148553"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F3F3F3"
-textColor = "#111111"
+textColor = "#1F2429"
 font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
 headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
 
