@@ -196,12 +196,13 @@ The app follows one flat, emerald design system:
 | Hairline | `#E0E2E5` | card borders, rules |
 | Tile | `#F3F3F3` | subtitle box, tab track |
 | Canvas | `#FFFFFF` | the page background behind the content |
-| Sidebar | `#E8F1EC` | the filter panel, so the page is not all white |
+| Sidebar | `#E4EBE6` | the filter panel, a muted sage that sits with the emerald accents |
 
-The KPI row carries one colour story per metric — total loans in an emerald
-tile (`#D2EDE0` / `#0B6B41`), defaulted loans in a red tile (`#FBE0DE` /
-`#B3261E`), the overall default rate in an amber tile (`#FBE8C0` / `#96620A`)
-and the average loan amount in a neutral grey tile (`#ECEEF1` / `#1F2429`).
+The KPI row is four white cards, each with a 6px coloured bar down its left
+edge and one colour story per metric — total loans in emerald (`#148553` /
+`#0B6B41`), defaulted loans in red (`#D64545` / `#B3261E`), the overall default
+rate in amber (`#E0A200` / `#96620A`) and the average loan amount in a neutral
+grey (`#8A9099` / `#1F2429`).
 
 Typography is **Inter** — loaded from Google Fonts, with Helvetica Neue as the
 offline fallback — and every chart uses the same typeface and colourway
@@ -210,11 +211,13 @@ offline fallback — and every chart uses the same typeface and colourway
 ### Layout details
 
 * The content area is a plain white canvas; the sidebar is the only tinted
-  panel (`#E8F1EC`), so the page reads as one surface with a green rail.
+  panel (a muted sage, `#E4EBE6`), so the page reads as one surface with a
+  soft rail and the emerald accents stay on the data.
 * Each page opens with a subtitle set in a flat grey box (rounded corners, no
   border).
-* The KPI cards are tinted tiles without borders or shadows: a small uppercase
-  label and the number, coloured per metric.
+* The KPI cards are white cards with a hairline border and a 6px coloured bar
+  down the left edge: a small uppercase label and the number, coloured per
+  metric.
 * The charts are drawn without gridlines — only the axis lines remain, so the
   bars carry the reading.
 * The risk bands keep their semantics: green `#148553` (low), amber `#F59E0B`

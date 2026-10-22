@@ -86,23 +86,19 @@ STYLE_CSS = """
         --line: #E0E2E5;
         --tile: #F3F3F3;
         --page: #FFFFFF;
-        --sidebar-bg: #E8F1EC;
+        --sidebar-bg: #E4EBE6;
         --green: #148553;
         --amber: #E0A200;
         --red: #D64545;
-        /* KPI tints: one colour story per metric. */
+        /* KPI accents: one colour story per metric. */
         --kpi-label: #4E555E;
-        --kpi-green-bg: #D2EDE0;
-        --kpi-green-bg-hover: #C4E6D6;
+        --kpi-green-bar: #148553;
         --kpi-green-fg: #0B6B41;
-        --kpi-amber-bg: #FBE8C0;
-        --kpi-amber-bg-hover: #F7DFAD;
+        --kpi-amber-bar: #E0A200;
         --kpi-amber-fg: #96620A;
-        --kpi-red-bg: #FBE0DE;
-        --kpi-red-bg-hover: #F7D3D0;
+        --kpi-red-bar: #D64545;
         --kpi-red-fg: #B3261E;
-        --kpi-grey-bg: #ECEEF1;
-        --kpi-grey-bg-hover: #E5E8EC;
+        --kpi-grey-bar: #8A9099;
         --kpi-grey-fg: #1F2429;
       }
 
@@ -171,19 +167,33 @@ STYLE_CSS = """
       }
 
       /* ---------------------------------------------------------------- KPI */
+      /* A white card with a thick coloured bar down the left edge: the bar
+         carries the metric's colour, the number is set in the deeper tone. */
       div[data-testid="stMetric"] {
         position: relative;
-        background: var(--kpi-grey-bg);
-        border: none;
+        background: #FFFFFF;
+        border: 1px solid var(--line);
         border-radius: 12px;
-        padding: 16px 18px 14px 18px;
+        padding: 16px 18px 14px 22px;
         box-shadow: none;
-        transition: transform 0.15s ease, background 0.15s ease;
+        overflow: hidden;
+        transition: transform 0.15s ease, box-shadow 0.15s ease,
+          border-color 0.15s ease;
         animation: kpiIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+      }
+      div[data-testid="stMetric"]::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 6px;
+        background: var(--kpi-grey-bar);
       }
       div[data-testid="stMetric"]:hover {
         transform: translateY(-2px);
-        background: var(--kpi-grey-bg-hover);
+        box-shadow: 0 8px 20px rgba(17, 17, 17, 0.07);
+        border-color: #D3D6DA;
       }
       [data-testid="stMetricLabel"] p {
         font-size: 0.71rem !important;
@@ -198,30 +208,22 @@ STYLE_CSS = """
         letter-spacing: -0.03em;
         font-size: 1.85rem;
       }
-      /* One tint per KPI: total loans (emerald), defaulted loans (red),
+      /* One colour per KPI: total loans (emerald), defaulted loans (red),
          default rate (amber), average loan amount (neutral). */
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(1)
-        div[data-testid="stMetric"] { background: var(--kpi-green-bg); }
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(1)
-        div[data-testid="stMetric"]:hover { background: var(--kpi-green-bg-hover); }
+        div[data-testid="stMetric"]::before { background: var(--kpi-green-bar); }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(1)
         [data-testid="stMetricValue"] { color: var(--kpi-green-fg) !important; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
-        div[data-testid="stMetric"] { background: var(--kpi-red-bg); }
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
-        div[data-testid="stMetric"]:hover { background: var(--kpi-red-bg-hover); }
+        div[data-testid="stMetric"]::before { background: var(--kpi-red-bar); }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
         [data-testid="stMetricValue"] { color: var(--kpi-red-fg) !important; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
-        div[data-testid="stMetric"] { background: var(--kpi-amber-bg); }
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
-        div[data-testid="stMetric"]:hover { background: var(--kpi-amber-bg-hover); }
+        div[data-testid="stMetric"]::before { background: var(--kpi-amber-bar); }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
         [data-testid="stMetricValue"] { color: var(--kpi-amber-fg) !important; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
-        div[data-testid="stMetric"] { background: var(--kpi-grey-bg); }
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
-        div[data-testid="stMetric"]:hover { background: var(--kpi-grey-bg-hover); }
+        div[data-testid="stMetric"]::before { background: var(--kpi-grey-bar); }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
         [data-testid="stMetricValue"] { color: var(--kpi-grey-fg) !important; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
