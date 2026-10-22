@@ -105,12 +105,21 @@ STYLE_CSS = """
         --kpi-grey-fg: #111111;
       }
 
-      /* Typography: one clean grotesque across the whole app. */
+      /* Typography: one clean grotesque across the whole app.  Streamlit draws
+         its own icons as Material Symbols ligatures, so they are kept out of
+         this rule and handed their icon font back further down — otherwise the
+         ligature name (for example "keyboard_double_arrow_left") is rendered
+         as plain text. */
       html, body, [class*="css"], [data-testid="stApp"], [data-testid="stApp"] p,
       [data-testid="stApp"] h1, [data-testid="stApp"] h2, [data-testid="stApp"] h3,
-      [data-testid="stApp"] span, [data-testid="stApp"] div, [data-testid="stApp"] li,
+      [data-testid="stApp"] span:not([data-testid="stIconMaterial"]),
+      [data-testid="stApp"] div, [data-testid="stApp"] li,
       [data-testid="stApp"] label, button, input, select, textarea {
         font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+      }
+      [data-testid="stApp"] [data-testid="stIconMaterial"] {
+        font-family: "Material Symbols Rounded" !important;
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
       }
 
       /* App frame: a white sheet floating on a soft grey backdrop. */
@@ -226,66 +235,48 @@ STYLE_CSS = """
       }
 
       /* ---------------------------------------------------------------- Tabs */
+      /* Segmented control: the tabs size to their label so nothing is ever
+         truncated, and the active tab carries the white segment itself. */
       div[data-testid="stTabs"] [role="tablist"] {
         position: relative;
-        display: flex;
+        display: inline-flex;
+        width: fit-content;
+        max-width: 100%;
         gap: 0;
         background: var(--tile);
         border: none;
         border-radius: 10px;
         padding: 4px;
-      }
-      /* The sliding pill behind the active tab. The position is carried by a
-         custom property (Chromium does not re-check :has() on pseudo
-         elements, but it does follow inherited custom properties). */
-      div[data-testid="stTabs"] [role="tablist"] { --pill-x: 0px; }
-      div[data-testid="stTabs"]
-        [role="tablist"]:has([data-testid="stTab"]:nth-child(1)[aria-selected="true"])
-        { --pill-x: 0px; }
-      div[data-testid="stTabs"]
-        [role="tablist"]:has([data-testid="stTab"]:nth-child(2)[aria-selected="true"])
-        { --pill-x: 100%; }
-      div[data-testid="stTabs"]
-        [role="tablist"]:has([data-testid="stTab"]:nth-child(3)[aria-selected="true"])
-        { --pill-x: 200%; }
-      div[data-testid="stTabs"] [role="tablist"]::before {
-        content: "";
-        position: absolute;
-        top: 4px;
-        left: 4px;
-        width: calc((100% - 8px) / 3);
-        height: calc(100% - 8px);
-        box-sizing: border-box;
-        border-radius: 8px;
-        background: #FFFFFF;
-        border: 1px solid var(--line);
-        box-shadow: 0 2px 6px rgba(17, 17, 17, 0.07);
-        transform: translateX(var(--pill-x));
-        transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 0;
+        overflow: auto hidden;
       }
       div[data-testid="stTabs"] .react-aria-SelectionIndicator { display: none; }
       div[data-testid="stTabs"] [data-testid="stTab"] {
         position: relative;
         z-index: 1;
-        flex: 1 1 0;
-        min-width: 0;
+        flex: 0 0 auto;
         border-radius: 8px;
-        padding: 0.5rem 0.9rem;
+        padding: 0.5rem 0.95rem;
         font-weight: 600;
         color: var(--muted);
-        transition: color 0.2s ease;
+        border: 1px solid transparent;
+        transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
       }
       div[data-testid="stTabs"] [data-testid="stTab"]:hover { color: var(--ink); }
       div[data-testid="stTabs"] [data-testid="stTab"][aria-selected="true"],
       div[data-testid="stTabs"] [data-testid="stTab"][aria-selected="true"]:hover
-        { color: var(--ink); font-weight: 700; }
+        {
+          color: var(--ink);
+          font-weight: 700;
+          background: #FFFFFF;
+          border-color: var(--line);
+          box-shadow: 0 2px 6px rgba(17, 17, 17, 0.07);
+        }
       div[data-testid="stTabs"] [data-testid="stTab"] p {
         color: inherit;
         font-weight: inherit;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        overflow: visible;
+        text-overflow: clip;
       }
 
       /* --------------------------------------------------------- Panel motion */

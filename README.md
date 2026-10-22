@@ -37,8 +37,9 @@ re-cleans the data and never writes to either asset.
 * Bars carry percentage labels and every y-axis has headroom so the labels
   are never clipped. The charts are grouped into three tabs
   (*Overview*, *Credit Risk*, *Purpose & Geography*) and laid out in
-  two columns. The tabs are styled as a segmented control with a sliding
-  highlight.
+  two columns. The tabs are styled as a segmented control: each tab is sized
+  to its own label, so no tab name is ever truncated, and the active tab
+  carries the white segment.
 
 ### Predict Default page
 
@@ -221,8 +222,8 @@ offline fallback — and every chart uses the same typeface and colourway
 ### Motion
 
 * The four KPI cards fade in one after the other (0.07 s apart).
-* The chart switcher is a segmented control: a white pill slides to the
-  selected tab and the label lifts on hover.
+* The chart switcher is a segmented control: the active tab holds the white
+  segment and the label lifts on hover.
 * Switching tabs replays the entrance animation of the panel and of its chart
   cards, so every switch feels like the charts are being re-drawn. The
   animation name changes with the active tab, which is what makes the motion
