@@ -50,11 +50,11 @@ REQUIRED_COLUMNS = [
 # ---------------------------------------------------------------------------
 # Palette
 # ---------------------------------------------------------------------------
-PRIMARY = "#148553"      # main colour: fully paid / primary series
-SECONDARY = "#0F7A4C"    # deep emerald: the second series (defaulted)
-TEXT = "#1F2429"         # soft near-black for chart text
-MUTED = "#5F6771"        # secondary chart text (axis ticks, captions)
-GRID = "#E0E2E5"
+PRIMARY = "#0F7A52"      # emerald: the safe series ("Fully Paid") and the brand
+SECONDARY = "#C0392B"    # risk red: the second series ("Defaulted")
+TEXT = "#14181D"         # near-black for chart text
+MUTED = "#5B6570"        # secondary chart text (axis ticks, captions)
+GRID = "#E2E5E9"
 FONT = "Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif"
 
 PAID_LABEL = "Fully Paid"
@@ -76,30 +76,29 @@ STYLE_CSS = """
       @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
       :root {
-        --brand: #148553;
-        --brand-dark: #0F7A4C;
-        --brand-soft: #CBE8D9;
-        --brand-line: #A9D8C1;
-        --danger: #D64545;
-        --ink: #1F2429;
-        --muted: #5F6771;
-        --line: #E0E2E5;
-        --tile: #F3F3F3;
+        --brand: #0F7A52;
+        --brand-dark: #0A5C3E;
+        --brand-soft: #E4F1EA;
+        --brand-line: #C3E0D1;
+        --danger: #C0392B;
+        --ink: #14181D;
+        --muted: #5B6570;
+        --line: #E2E5E9;
+        --tile: #F4F6F5;
         --page: #FFFFFF;
-        --sidebar-bg: #E4EBE6;
-        --green: #148553;
-        --amber: #E0A200;
-        --red: #D64545;
-        /* KPI accents: one colour story per metric. */
-        --kpi-label: #1F2429;
-        --kpi-green-bar: #148553;
-        --kpi-green-fg: #0B6B41;
-        --kpi-amber-bar: #E0A200;
-        --kpi-amber-fg: #96620A;
-        --kpi-red-bar: #D64545;
-        --kpi-red-fg: #B3261E;
-        --kpi-grey-bar: #8A9099;
-        --kpi-grey-fg: #1F2429;
+        --sidebar-bg: #F3F5F4;
+        --green: #0F7A52;
+        --amber: #B45309;
+        --red: #C0392B;
+        /* The KPI band is the one dark surface on the page: white numbers,
+           each in the colour of its own metric. */
+        --kpi-bg: #14181D;
+        --kpi-label: rgba(255, 255, 255, 0.62);
+        --kpi-divider: rgba(255, 255, 255, 0.10);
+        --kpi-green: #3BC48C;
+        --kpi-red: #E8695C;
+        --kpi-amber: #E9A93C;
+        --kpi-slate: #A3AEB9;
       }
 
       /* Typography: one clean grotesque across the whole app.  Streamlit draws
@@ -167,77 +166,79 @@ STYLE_CSS = """
       }
 
       /* ---------------------------------------------------------------- KPI */
-      /* A white card with a thick coloured bar down the left edge: the bar
-         carries the metric's colour, the number is set in the deeper tone. */
-      div[data-testid="stMetric"] {
-        position: relative;
-        background: #FFFFFF;
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        padding: 16px 18px 14px 22px;
-        box-shadow: none;
+      /* One dark stat band holds the four metrics: hairline dividers between
+         the cells, a soft uppercase label and the number in the colour of its
+         own metric. */
+      .st-key-kpi_row {
+        background: var(--kpi-bg);
+        border-radius: 16px;
+        padding: 2px 0;
         overflow: hidden;
-        transition: transform 0.15s ease, box-shadow 0.15s ease,
-          border-color 0.15s ease;
+      }
+      .st-key-kpi_row [data-testid="stHorizontalBlock"] {
+        gap: 0 !important;
+        flex-wrap: wrap;
+      }
+      .st-key-kpi_row [data-testid="stColumn"] {
+        box-sizing: border-box;
+        padding: 20px;
+        transition: background 0.15s ease;
+      }
+      .st-key-kpi_row [data-testid="stColumn"]:hover {
+        background: rgba(255, 255, 255, 0.045);
+      }
+      .st-key-kpi_row [data-testid="stColumn"] + [data-testid="stColumn"] {
+        border-left: 1px solid var(--kpi-divider);
+      }
+      div[data-testid="stMetric"] {
+        background: transparent;
+        border: none;
+        padding: 0;
+        box-shadow: none;
         animation: kpiIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
       }
-      div[data-testid="stMetric"]::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: 6px;
-        background: var(--kpi-grey-bar);
-      }
-      div[data-testid="stMetric"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(17, 17, 17, 0.07);
-        border-color: #D3D6DA;
-      }
       [data-testid="stMetricLabel"] p {
-        font-size: 0.71rem !important;
+        font-size: 0.68rem !important;
         font-weight: 700 !important;
-        letter-spacing: 0.09em !important;
+        letter-spacing: 0.11em !important;
         text-transform: uppercase;
         color: var(--kpi-label) !important;
       }
       div[data-testid="stMetricValue"] {
-        color: var(--kpi-grey-fg) !important;
+        color: #FFFFFF !important;
         font-weight: 800 !important;
         letter-spacing: -0.03em;
-        font-size: 1.85rem;
+        font-size: 2rem;
+        line-height: 1.15;
+        margin-top: 6px;
       }
       /* One colour per KPI: total loans (emerald), defaulted loans (red),
          default rate (amber), average loan amount (neutral). */
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(1)
-        div[data-testid="stMetric"]::before { background: var(--kpi-green-bar); }
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(1)
-        [data-testid="stMetricValue"] { color: var(--kpi-green-fg) !important; }
+        [data-testid="stMetricValue"] { color: var(--kpi-green) !important; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
-        div[data-testid="stMetric"]::before { background: var(--kpi-red-bar); }
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
-        [data-testid="stMetricValue"] { color: var(--kpi-red-fg) !important; }
+        [data-testid="stMetricValue"] { color: var(--kpi-red) !important; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
-        div[data-testid="stMetric"]::before { background: var(--kpi-amber-bar); }
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
-        [data-testid="stMetricValue"] { color: var(--kpi-amber-fg) !important; }
+        [data-testid="stMetricValue"] { color: var(--kpi-amber) !important; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
-        div[data-testid="stMetric"]::before { background: var(--kpi-grey-bar); }
-      .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
-        [data-testid="stMetricValue"] { color: var(--kpi-grey-fg) !important; }
+        [data-testid="stMetricValue"] { color: var(--kpi-slate) !important; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(2)
         div[data-testid="stMetric"] { animation-delay: 0.07s; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(3)
         div[data-testid="stMetric"] { animation-delay: 0.14s; }
       .st-key-kpi_row [data-testid="stHorizontalBlock"] > div:nth-child(4)
         div[data-testid="stMetric"] { animation-delay: 0.21s; }
+      /* On a narrow screen the band folds into two rows of two. */
+      @media (max-width: 1279px) {
+        .st-key-kpi_row [data-testid="stColumn"] { flex: 1 1 50%; }
+        .st-key-kpi_row [data-testid="stColumn"]:nth-child(3) { border-left: none; }
+      }
 
       /* -------------------------------------------------------- Chart cards */
       [class*="st-key-card-"] {
         background: #FFFFFF;
         border: 1px solid var(--line) !important;
-        border-radius: 12px;
+        border-radius: 14px;
         padding: 16px 18px 6px 18px;
         box-shadow: none;
         transition: box-shadow 0.15s ease, transform 0.15s ease;
@@ -446,7 +447,7 @@ STYLE_CSS = """
         display: flex;
         height: 12px;
         border-radius: 999px;
-        background: #ECECEC;
+        background: #E9ECEB;
       }
       .risk-seg { height: 100%; }
       .risk-seg:first-child { border-radius: 999px 0 0 999px; }
@@ -508,7 +509,7 @@ STYLE_CSS = """
       [data-testid="stSidebarNavLink"] span[label] { color: inherit; }
       [data-testid="stSidebarNavLink"]:hover {
         border-color: #C9C9CC;
-        background: #FAFAFA;
+        background: #F7F9F8;
         color: var(--ink);
         transform: none;
       }
@@ -803,7 +804,7 @@ def _build_template() -> go.layout.Template:
             font=dict(family=FONT, size=12.5, color=TEXT),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            colorway=[PRIMARY, SECONDARY, "#C7E9D8", "#5B8C74", "#9BC9B4"],
+            colorway=[PRIMARY, SECONDARY, "#5EA98A", "#8FC7AE", "#C7E2D5"],
             xaxis=dict(
                 showgrid=False, zeroline=False, linecolor=GRID,
                 tickfont=dict(size=11.5, color=MUTED), title_font=dict(size=12, color=TEXT),
@@ -1058,9 +1059,9 @@ def column_limits(df: pd.DataFrame, column: str) -> tuple[float, float]:
 RISK_LOW = 0.20
 RISK_HIGH = 0.50
 
-RISK_GREEN = "#148553"
-RISK_AMBER = "#F59E0B"
-RISK_RED = "#EF4444"
+RISK_GREEN = "#0F7A52"
+RISK_AMBER = "#B45309"
+RISK_RED = "#C0392B"
 
 RISK_BANDS = [
     {
@@ -1071,8 +1072,8 @@ RISK_BANDS = [
         "legend": "comfortably safe, routine monitoring",
         "verdict": "Likely to be repaid",
         "description": "Low likelihood of default",
-        "foot_bg": "#E4F2EC",
-        "foot_fg": "#0F7A4C",
+        "foot_bg": "#E4F1EA",
+        "foot_fg": "#0A5C3E",
     },
     {
         "label": "Medium risk",
@@ -1082,8 +1083,8 @@ RISK_BANDS = [
         "legend": "uncertain, worth a preventive check-in",
         "verdict": "Worth a closer look",
         "description": "Moderate likelihood of default",
-        "foot_bg": "#FEF6E7",
-        "foot_fg": "#8A5300",
+        "foot_bg": "#FBF1DC",
+        "foot_fg": "#7A4A00",
     },
     {
         "label": "High risk",
@@ -1093,7 +1094,7 @@ RISK_BANDS = [
         "legend": "act now, escalate for manual review",
         "verdict": "Likely to default",
         "description": "High likelihood of default",
-        "foot_bg": "#FDECEC",
+        "foot_bg": "#FBE7E5",
         "foot_fg": "#8C1D1D",
     },
 ]

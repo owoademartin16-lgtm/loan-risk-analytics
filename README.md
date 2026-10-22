@@ -25,7 +25,7 @@ re-cleans the data and never writes to either asset.
 
   | Chart | Notes |
   |---|---|
-  | Outcome Distribution | Fully paid (`#148553`) vs defaulted (`#0F7A4C`) |
+  | Outcome Distribution | Fully paid (emerald `#0F7A52`) vs defaulted (red `#C0392B`) |
   | Default Rate By issue year | Line chart; warns that the newest cohorts are understated |
   | Default Rate By loan amount band | 0–5k … 30k+ |
   | Default Rate By FICO band | Below 580 … 740+ (empty bands are dropped) |
@@ -185,43 +185,46 @@ injected with `st.html()` by `app.py` (sidebar) and by each page script — with
 `st.navigation` the main script's own elements are only rendered on the
 default page, so the CSS has to be injected from the page scripts as well.
 
-The app follows one flat, emerald design system:
+The app follows one flat design system: a white canvas, a soft neutral rail
+and a single dark stat band, with colour used only where it carries meaning.
 
 | Token | Value | Where it is used |
 |---|---|---|
-| Primary | `#148553` | main series, submit button, active navigation |
-| Secondary | `#0F7A4C` | the second series (defaulted) |
-| Ink | `#1F2429` | headings, KPI values, risk marker |
-| Muted | `#5F6771` | captions, axis labels, secondary text |
-| Hairline | `#E0E2E5` | card borders, rules |
-| Tile | `#F3F3F3` | subtitle box, tab track |
+| Ink | `#14181D` | headings, KPI labels, risk marker |
+| Muted | `#5B6570` | captions, axis labels, secondary text |
+| Hairline | `#E2E5E9` | card borders, rules |
 | Canvas | `#FFFFFF` | the page background behind the content |
-| Sidebar | `#E4EBE6` | the filter panel, a muted sage that sits with the emerald accents |
+| Rail | `#F3F5F4` | the filter panel, a soft neutral so the page is not all white |
+| Tile | `#F4F6F5` | subtitle box, tab track |
+| Emerald | `#0F7A52` | the brand: the "Fully Paid" series, submit button, active navigation |
+| Risk | `#C0392B` | the "Defaulted" series and the high-risk band |
+| Amber | `#B45309` | the medium-risk band |
+| Stat band | `#14181D` | the KPI band, the one dark surface on the page |
 
-The KPI row is four white cards, each with a 6px coloured bar down its left
-edge and one colour story per metric — total loans in emerald (`#148553` /
-`#0B6B41`), defaulted loans in red (`#D64545` / `#B3261E`), the overall default
-rate in amber (`#E0A200` / `#96620A`) and the average loan amount in a neutral
-grey (`#8A9099` / `#1F2429`).
+The KPI row is a single dark band: four metrics in one rounded panel, hairline
+dividers between the cells, a soft uppercase label and the number in the colour
+of its metric — emerald `#3BC48C` for total loans, red `#E8695C` for defaulted
+loans, amber `#E9A93C` for the overall default rate and slate `#A3AEB9` for the
+average loan amount. Below 1280 px the band folds into two rows of two.
 
 Typography is **Inter** — loaded from Google Fonts (400–800), with Helvetica
 Neue as the offline fallback — and every chart uses the same typeface and
-colourway (`#148553`, `#0F7A4C`, `#C7E9D8`, `#5B8C74`, `#9BC9B4`).
+colourway (`#0F7A52`, `#C0392B`, `#5EA98A`, `#8FC7AE`, `#C7E2D5`).
 
 ### Layout details
 
 * The content area is a plain white canvas; the sidebar is the only tinted
-  panel (a muted sage, `#E4EBE6`), so the page reads as one surface with a
-  soft rail and the emerald accents stay on the data.
+  panel (a soft neutral, `#F3F5F4`).
 * Each page opens with a subtitle set in a flat grey box (rounded corners, no
   border).
-* The KPI cards are white cards with a hairline border and a 6px coloured bar
-  down the left edge: a small uppercase label in bold, near-black (`#1F2429`),
-  and the number in extra bold, coloured per metric.
+* The KPI cards are the dark stat band described above: one panel, four
+  numbers, each in the colour of its metric.
 * The charts are drawn without gridlines — only the axis lines remain, so the
   bars carry the reading.
-* The risk bands keep their semantics: green `#148553` (low), amber `#F59E0B`
-  (medium) and red `#EF4444` (high).
+* The outcome chart pairs emerald "Fully Paid" with red "Defaulted", so the
+  two outcomes can never be mistaken for one another.
+* The risk bands keep their semantics: green `#0F7A52` (low), amber `#B45309`
+  (medium) and red `#C0392B` (high).
 
 ### Motion
 
