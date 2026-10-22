@@ -91,7 +91,7 @@ STYLE_CSS = """
         --amber: #E0A200;
         --red: #D64545;
         /* KPI accents: one colour story per metric. */
-        --kpi-label: #3C434B;
+        --kpi-label: #1F2429;
         --kpi-green-bar: #148553;
         --kpi-green-fg: #0B6B41;
         --kpi-amber-bar: #E0A200;
