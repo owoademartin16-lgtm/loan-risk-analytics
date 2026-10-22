@@ -155,6 +155,15 @@ STYLE_CSS = """
       }
       [data-testid="stMain"] p { color: var(--muted); }
       [data-testid="stMain"] [data-testid="stCaptionContainer"] p { font-size: 0.84rem; }
+      /* Button labels keep the colour, weight and size of the button
+         itself: white on the emerald primary button, ink on the secondary
+         ones. */
+      [data-testid="stApp"] button p {
+        color: inherit !important;
+        font-weight: inherit !important;
+        font-size: inherit !important;
+        line-height: 1.2;
+      }
       [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {
         color: var(--muted);
         font-size: 0.84rem;
