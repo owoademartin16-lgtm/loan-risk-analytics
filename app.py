@@ -27,17 +27,35 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Inject CSS to force light backgrounds
+# Force light mode everywhere, prevent theme switching
 st.markdown(
     """
     <style>
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"], .stApp {
+    :root {
+        color-scheme: light only !important;
+    }
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"], .stApp,
+    [data-testid="stHeader"], section.main {
         background-color: #FFFFFF !important;
+        color-scheme: light only !important;
     }
     section[data-testid="stSidebar"] {
         background-color: #E7EBEA !important;
     }
+    /* Force all text to be visible in light mode */
+    * {
+        color-scheme: light only !important;
+    }
+    /* Hide theme selector if it exists */
+    [data-testid="stThemeSelector"], [data-testid="baseButton-headerNoPadding"] {
+        display: none !important;
+    }
     </style>
+    <script>
+    // Force light mode
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('stActiveTheme', '"Light"');
+    </script>
     """,
     unsafe_allow_html=True,
 )
