@@ -199,7 +199,7 @@ and quiet white stat cards, with colour used only where it carries meaning.
 | Tile | `#F4F6F5` | subtitle box, tab track |
 | Emerald | `#0F7A52` | the brand: the "Fully Paid" series, submit button, active navigation |
 | Risk | `#C0392B` | the "Defaulted" series, every default-rate bar and the high-risk band |
-| Amber | `#B45309` | the medium-risk band |
+| Amber | `#F59E0B` | the medium-risk band |
 
 The KPI row is four quiet stat cards: a white panel with a hairline border and
 a 16 px radius, an uppercase near-black label, the number in black at weight
@@ -231,7 +231,7 @@ colourway (`#0F7A52`, `#C0392B`, `#5EA98A`, `#8FC7AE`, `#C7E2D5`).
 * Every default-rate chart — the trend line in "Overview" and all of the bars
   in "Credit Risk" and "Purpose & Geography" — shares one colour, the risk red
   `#C0392B`, so a bar looks the same in every chart.
-* The risk bands keep their semantics: green `#0F7A52` (low), amber `#B45309`
+* The risk bands keep their semantics: green `#0F7A52` (low), amber `#F59E0B`
   (medium) and red `#C0392B` (high).
 
 ### Motion

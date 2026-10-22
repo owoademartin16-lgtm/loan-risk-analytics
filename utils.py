@@ -107,7 +107,7 @@ STYLE_CSS = """
         --page: #FFFFFF;
         --sidebar-bg: #E7EBEA;
         --green: #0F7A52;
-        --amber: #B45309;
+        --amber: #F59E0B;
         --red: #C0392B;
         /* The KPI rules carry one colour per metric. */
         --kpi-green: #1E9E6A;
@@ -1116,7 +1116,7 @@ RISK_LOW = 0.20
 RISK_HIGH = 0.50
 
 RISK_GREEN = "#0F7A52"
-RISK_AMBER = "#B45309"
+RISK_AMBER = "#F59E0B"
 RISK_RED = "#C0392B"
 
 RISK_BANDS = [
@@ -1139,8 +1139,8 @@ RISK_BANDS = [
         "legend": "uncertain, worth a preventive check-in",
         "verdict": "Worth a closer look",
         "description": "Moderate likelihood of default",
-        "foot_bg": "#FBF1DC",
-        "foot_fg": "#7A4A00",
+        "foot_bg": "#FEF3C7",
+        "foot_fg": "#92400E",
     },
     {
         "label": "High risk",

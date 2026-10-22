@@ -20,13 +20,29 @@ from __future__ import annotations
 
 import streamlit as st
 
-import utils
-
+# Force light theme only - no dark mode
 st.set_page_config(
     page_title="Loan Risk Analytics",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Inject CSS to force light backgrounds
+st.markdown(
+    """
+    <style>
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"], .stApp {
+        background-color: #FFFFFF !important;
+    }
+    section[data-testid="stSidebar"] {
+        background-color: #E7EBEA !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+import utils
 
 utils.inject_styles()
 
