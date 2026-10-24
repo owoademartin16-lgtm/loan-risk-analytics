@@ -182,8 +182,8 @@
     table{ display:table; width:100%; min-width: 0; font-size: 11.5px; table-layout: fixed; }
     thead th, tbody td{ padding: 7px 8px; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
     tbody td.num, thead th.num{ font-size: 10.5px; }
-    figure{ overflow-x:auto; -webkit-overflow-scrolling: touch; }
-    figure svg{ min-width: 460px; height:auto; }
+    figure{ display:block; width:100%; overflow-x:auto; -webkit-overflow-scrolling: touch; }
+    figure svg{ width:100%; min-width: 0; height:auto; display:block; }
     .back-row{ flex-direction:column; align-items:flex-start; }
     footer .wrap{ flex-direction:column; align-items:flex-start; }
   }
@@ -193,7 +193,7 @@
     table{ font-size: 11px; }
     thead th, tbody td{ padding: 6px 7px; }
     tbody td.num, thead th.num{ font-size: 10px; }
-    figure svg{ min-width: 420px; }
+    figure svg{ width:100%; min-width: 0; }
   }
 
   @media (prefers-reduced-motion: reduce){
