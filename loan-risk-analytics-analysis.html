@@ -178,10 +178,10 @@
     .kpi .label{ font-size: 11px; }
     .kpi .value{ font-size: 22px; color: #FFD93B; }
     .chapter h2{ font-size: clamp(26px, 7vw, 38px); }
-    .chapter{ overflow-x:hidden; }
-    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling: touch; margin: 18px 0; width:100%; }
-    table{ width: max-content; min-width: 100%; }
-    thead th, tbody td{ white-space:nowrap; }
+    .table-wrap{ display:block; width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    table{ display:block; width:max-content; min-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:nowrap; }
+    thead, tbody, tr{ display:table; width:100%; table-layout:auto; }
+    thead th, tbody td{ padding: 10px 12px; white-space:nowrap; }
     figure{ overflow-x:auto; -webkit-overflow-scrolling: touch; }
     figure svg{ min-width: 520px; height:auto; }
     .back-row{ flex-direction:column; align-items:flex-start; }
