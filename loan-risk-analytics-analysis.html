@@ -167,7 +167,7 @@
   footer .wrap{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; font-family: var(--font-mono); font-size: 13px; color: var(--paper-dim); }
 
   @media (max-width: 720px){
-    .wrap{ padding: 0 18px; }
+    .wrap{ padding: 0 16px; }
     nav{ height: 64px; }
     header .back-link span{ display:none; }
     .hero{ padding: 110px 0 40px; }
@@ -178,8 +178,11 @@
     .kpi .label{ font-size: 11px; }
     .kpi .value{ font-size: 22px; color: #FFD93B; }
     .chapter h2{ font-size: clamp(26px, 7vw, 38px); }
-    table{ display:block; overflow-x:auto; white-space:nowrap; }
-    figure{ overflow-x:auto; }
+    .chapter{ overflow-x:hidden; }
+    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling: touch; margin: 18px 0; width:100%; }
+    table{ width: max-content; min-width: 100%; }
+    thead th, tbody td{ white-space:nowrap; }
+    figure{ overflow-x:auto; -webkit-overflow-scrolling: touch; }
     figure svg{ min-width: 520px; height:auto; }
     .back-row{ flex-direction:column; align-items:flex-start; }
     footer .wrap{ flex-direction:column; align-items:flex-start; }
@@ -261,7 +264,8 @@
         <div class="chnum">03 · about the data</div>
         <h2>About the data</h2>
         <p>The dataset contained 1,347,681 loan records, including borrower characteristics, loan details, and repayment outcomes.</p>
-        <table>
+        <div class="table-wrap">
+<table>
           <thead><tr><th>Dataset measure</th><th class="num">Number</th></tr></thead>
           <tbody>
             <tr><td>Total loans</td><td class="num">1,347,681</td></tr>
@@ -270,6 +274,7 @@
             <tr><td>Overall default rate</td><td class="num">19.98%</td></tr>
           </tbody>
         </table>
+        </div>
         <p>Roughly one in five loans in the dataset was classified as defaulted.</p>
       </section>
 
@@ -277,7 +282,8 @@
         <div class="chnum">04 · larger loans had higher default rates</div>
         <h2>Larger loans had higher default rates</h2>
         <p>I grouped loans into amount ranges and calculated the default rate for each group.</p>
-        <table>
+        <div class="table-wrap">
+<table>
           <thead><tr><th>Loan amount</th><th class="num">Number of loans</th><th class="num">Default rate</th><th class="num">Average loan amount</th></tr></thead>
           <tbody>
             <tr><td>$0–$5,000</td><td class="num">182,926</td><td class="num">15.81%</td><td class="num">$3,656.96</td></tr>
@@ -289,6 +295,7 @@
             <tr><td>$30,000+</td><td class="num">81,325</td><td class="num">24.48%</td><td class="num">$34,781.01</td></tr>
           </tbody>
         </table>
+        </div>
         <figure>
           <svg viewBox="0 0 560 240" role="img" aria-label="Default rate by loan amount range">
             <text x="0" y="16" font-family="Space Mono, monospace" font-size="11" fill="#A9AFA0">default rate (%) by loan amount</text>
@@ -328,7 +335,8 @@
         <div class="chnum">05 · credit score was one of the clearest risk indicators</div>
         <h2>Credit score was one of the clearest risk indicators</h2>
         <p>I grouped borrowers by FICO score to compare their default rates.</p>
-        <table>
+        <div class="table-wrap">
+<table>
           <thead><tr><th>FICO score range</th><th class="num">Number of loans</th><th class="num">Default rate</th><th class="num">Average FICO score</th></tr></thead>
           <tbody>
             <tr><td>580–619</td><td class="num">3</td><td class="num">33.33%</td><td class="num">613.67</td></tr>
@@ -338,6 +346,7 @@
             <tr><td>740+</td><td class="num">145,292</td><td class="num">9.65%</td><td class="num">767.15</td></tr>
           </tbody>
         </table>
+        </div>
         <figure>
           <svg viewBox="0 0 560 230" role="img" aria-label="Default rate by FICO band">
             <text x="0" y="16" font-family="Space Mono, monospace" font-size="11" fill="#A9AFA0">default rate (%) by fico band</text>
@@ -370,7 +379,8 @@
       <section class="chapter" id="purpose">
         <div class="chnum">06 · small business loans had the highest default rate by purpose</div>
         <h2>Small business loans had the highest default rate by purpose</h2>
-        <table>
+        <div class="table-wrap">
+<table>
           <thead><tr><th>Loan purpose</th><th class="num">Number of loans</th><th class="num">Default rate</th><th class="num">Average loan amount</th></tr></thead>
           <tbody>
             <tr><td>Small business</td><td class="num">15,575</td><td class="num">29.86%</td><td class="num">$15,631.85</td></tr>
@@ -389,6 +399,7 @@
             <tr><td>Wedding</td><td class="num">2,350</td><td class="num">12.43%</td><td class="num">$10,465.85</td></tr>
           </tbody>
         </table>
+        </div>
         <figure>
           <svg viewBox="0 0 560 320" role="img" aria-label="Default rate by loan purpose">
             <text x="0" y="16" font-family="Space Mono, monospace" font-size="11" fill="#A9AFA0">default rate (%) by loan purpose</text>
@@ -434,7 +445,8 @@
         <h2>Default rates differed across states</h2>
         <p>I compared default rates by borrower state to see where the recorded loan outcomes differed most. Location alone doesn't explain credit risk, but it can reveal regional differences in borrower profiles or lending patterns worth investigating.</p>
         <p>To keep the comparison manageable, I focused on the ten states with the highest observed default rates in the dataset.</p>
-        <table>
+        <div class="table-wrap">
+<table>
           <thead><tr><th>State</th><th class="num">Number of loans</th><th class="num">Default rate</th></tr></thead>
           <tbody>
             <tr><td>Mississippi</td><td class="num">6,593</td><td class="num">26.12%</td></tr>
@@ -449,6 +461,7 @@
             <tr><td>Indiana</td><td class="num">21,720</td><td class="num">21.44%</td></tr>
           </tbody>
         </table>
+        </div>
         <figure>
           <svg viewBox="0 0 560 320" role="img" aria-label="Default rate by state">
             <text x="0" y="16" font-family="Space Mono, monospace" font-size="11" fill="#A9AFA0">default rate (%) by state (top 10)</text>
@@ -495,7 +508,8 @@
         <h2>Loan default rate by issue year</h2>
         <p>I looked at default rates by the year a loan was issued to see how they changed over time. Default rates tend to move with the economic cycle, and it's also important to account for how much time has passed for loans to reach their final outcome.</p>
         <p>The dataset spans loans issued from 2007 through 2018, with volume growing dramatically after 2012. Looking at cohorts over time helps show how risk evolved across different lending periods.</p>
-        <table>
+        <div class="table-wrap">
+<table>
           <thead><tr><th>Issue year</th><th class="num">Number of loans</th><th class="num">Default rate</th></tr></thead>
           <tbody>
             <tr><td>2007</td><td class="num">599</td><td class="num">26.38%</td></tr>
@@ -512,6 +526,7 @@
             <tr><td>2018</td><td class="num">56,160</td><td class="num">15.75%</td></tr>
           </tbody>
         </table>
+        </div>
         <figure>
           <svg viewBox="0 0 560 240" role="img" aria-label="Default rate by issue year">
             <text x="0" y="16" font-family="Space Mono, monospace" font-size="11" fill="#A9AFA0">default rate (%) by issue year</text>
@@ -564,7 +579,8 @@
         <p>Using 1.35 million LendingClub records, I trained Decision Tree and Random Forest models to predict loan defaults based on borrower and loan characteristics.</p>
         <h3>Selecting the features</h3>
         <p>I selected seven input variables for the initial models.</p>
-        <table>
+        <div class="table-wrap">
+<table>
           <thead><tr><th>Feature</th><th>Why it was included</th></tr></thead>
           <tbody>
             <tr><td>Loan amount (<code>loan_amnt</code>)</td><td>To examine whether the amount borrowed helps distinguish repayment outcomes.</td></tr>
@@ -576,6 +592,7 @@
             <tr><td>State (<code>addr_state</code>)</td><td>To capture geographical differences in the historical loan records.</td></tr>
           </tbody>
         </table>
+        </div>
         <h3>Preparing the data</h3>
         <p>Numerical features were imputed with the median, categorical features with the most frequent category, and one-hot encoded. All steps were placed in a preprocessing pipeline for consistent application.</p>
         <h3>Handling the difference between defaulted and nondefaulted loans</h3>
@@ -586,7 +603,8 @@
         <p>I used a chronological split with earlier loans for training and more recent loans for testing. The test set had 269,537 records (55,516 defaults and 214,021 nondefaults).</p>
         <h3>Model evaluation</h3>
         <p>I compared models using accuracy, precision, recall, F1-score, and ROC-AUC.</p>
-        <table>
+        <div class="table-wrap">
+<table>
           <thead><tr><th>Metric</th><th class="num">Decision Tree</th><th class="num">Random Forest</th></tr></thead>
           <tbody>
             <tr><td>Accuracy</td><td class="num">60.04%</td><td class="num">60.92%</td></tr>
@@ -596,6 +614,7 @@
             <tr><td>ROC-AUC</td><td class="num">0.6401</td><td class="num">0.6505</td></tr>
           </tbody>
         </table>
+        </div>
         <p>Accuracy measures the share of all predictions that were correct. Precision measures how many loans flagged as defaults were actually recorded as defaults. Recall measures how many actual defaults the model successfully identified. F1-score balances precision and recall, while ROC-AUC measures how well the model ranks defaulted loans above non-defaulted loans across different classification thresholds.</p>
         <p>The Random Forest performed slightly better than the Decision Tree across all five reported measures. Its accuracy was 60.92%, compared with 60.04% for the Decision Tree. Its ROC-AUC was also higher, at 0.6505 compared with 0.6401.</p>
         <p>The improvement was modest, but it made the Random Forest the more promising of the two initial models.</p>
@@ -603,20 +622,23 @@
         <p>The Random Forest achieved a recall of 60.36% for the default class. In practical terms, it identified approximately six in ten loans that were recorded as defaults in the test set.</p>
         <p>However, its precision was only 28.68%. This means that fewer than three in ten loans it flagged as potential defaults were actually recorded as defaults in the test set.</p>
         <p>The confusion matrix makes this trade-off clearer:</p>
-        <table>
+        <div class="table-wrap">
+<table>
           <thead><tr><th>Actual outcome</th><th class="num">Predicted non-default</th><th class="num">Predicted default</th></tr></thead>
           <tbody>
             <tr><td>Non-defaulted</td><td class="num">130,701</td><td class="num">83,320</td></tr>
             <tr><td>Defaulted</td><td class="num">22,005</td><td class="num">33,511</td></tr>
           </tbody>
         </table>
+        </div>
         <p>The model correctly identified 33,511 defaults, but it also flagged 83,320 non-defaulted loans as potential defaults. It missed another 22,005 actual defaults.</p>
         <p>This is an important limitation. A lender using this model without additional checks could flag many borrowers who would otherwise repay their loans. On the other hand, the model did identify a substantial share of recorded defaults.</p>
         <p>The results show that the model can distinguish some differences between the two groups, but its current predictions would need improvement before being considered useful for a real lending workflow.</p>
         <h3>Why I kept the random forest as the initial baseline</h3>
         <p>The Random Forest was slightly stronger than the Decision Tree on every reported evaluation metric. It also provided a useful starting point for examining feature importance.</p>
         <p>The initial feature importance analysis showed that FICO score, debt-to-income ratio, and loan amount were the three leading individual features:</p>
-        <table>
+        <div class="table-wrap">
+<table>
           <thead><tr><th>Feature</th><th class="num">Random Forest importance</th></tr></thead>
           <tbody>
             <tr><td>FICO score</td><td class="num">35.37%</td></tr>
@@ -624,6 +646,7 @@
             <tr><td>Loan amount</td><td class="num">15.42%</td></tr>
           </tbody>
         </table>
+        </div>
         <p>Together, these three features accounted for approximately 72.1% of the model's total feature importance.</p>
         <p>This aligned with the exploratory analysis, where credit score, debt-to-income ratio, and loan amount showed noticeable differences in observed default rates.</p>
         <p>Feature importance indicates how the model used these variables when making predictions. It does not prove that they cause default, and it does not guarantee that the same ranking will hold in a different dataset or future lending period.</p>
