@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credit Risk Analysis and Loan Default Prediction · Martin Owoade</title>
+<meta name="description" content="Credit risk analysis of 1.35 million LendingClub loans: exploring drivers of default, model results, and recommendations.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #0E1512;
+    --ink-card: #141D18;
+    --paper: #EDEAD9;
+    --paper-dim: #A9AFA0;
+    --line: rgba(237,234,217,0.12);
+    --line-strong: rgba(237,234,217,0.24);
+    --signal: #FF9F1C;
+    --teal: #3DDC97;
+    --rose: #E96B6B;
+    --blue: #5B8DEF;
+    --emerald: #22C55E;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+    --maxw: 820px;
+  }
+  *{ box-sizing: border-box; margin: 0; padding: 0; }
+  html{ scroll-behavior: smooth; scroll-padding-top: 90px; }
+  body{
+    background: var(--ink); color: var(--paper);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.7;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  body::before{
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(237,234,217,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(237,234,217,0.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
+  }
+  ::selection{ background: var(--signal); color: var(--ink); }
+  a{ color: inherit; }
+  .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
+
+  header{
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    background: rgba(14,21,18,0.88); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav{ display: flex; align-items: center; justify-content: space-between; height: 70px; }
+  .back-link{
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 13px; color: var(--paper-dim);
+    transition: color .2s;
+  }
+  .back-link:hover{ color: var(--signal); }
+  .back-link svg{ width: 14px; height: 14px; }
+  .nav-gh{
+    display: inline-flex; align-items: center; gap: 7px; font-size: 14px;
+    color: var(--paper-dim); border: 1px solid var(--line-strong);
+    border-radius: 999px; padding: 8px 16px; text-decoration: none;
+    transition: color .2s, border-color .2s;
+  }
+  .nav-gh:hover{ color: var(--paper); border-color: var(--signal); }
+  .nav-gh svg{ width: 15px; height: 15px; }
+
+  .article-head{ padding: 150px 0 20px; }
+  .kicker{
+    font-family: var(--font-mono); font-size: 13px; color: var(--teal);
+    display: flex; align-items: center; gap: 8px; margin-bottom: 18px;
+  }
+  .kicker::before{ content: ''; width: 16px; height: 1px; background: var(--teal); }
+  h1{
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(2rem, 4.5vw, 3rem); line-height: 1.1; letter-spacing: -0.02em;
+  }
+  .lede{ margin-top: 18px; color: var(--paper-dim); font-size: 17px; max-width: 62ch; }
+
+  .key-results{
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    margin: 36px 0 8px;
+  }
+  @media (max-width: 640px){ .key-results{ grid-template-columns: repeat(2, 1fr); } }
+  .kr{
+    background: var(--ink-card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 16px;
+  }
+  .kr .n{ font-family: var(--font-display); font-size: 24px; font-weight: 600; color: #FFD93B; }
+  .kr .t{ font-family: var(--font-mono); font-size: 11px; color: var(--paper-dim); margin-top: 4px; }
+
+  article{ padding: 24px 0 40px; }
+  .chapter{ margin-bottom: 56px; }
+  .chapter .chnum{ font-family: var(--font-mono); font-size: 13px; color: var(--signal); margin-bottom: 8px; }
+  .chapter h2{
+    font-family: var(--font-display); font-weight: 600;
+    font-size: clamp(1.4rem, 2.6vw, 1.8rem); letter-spacing: -0.01em; margin-bottom: 18px;
+  }
+  .chapter h3{
+    font-family: var(--font-display); font-size: 17px; font-weight: 600;
+    margin: 26px 0 10px; color: var(--paper);
+  }
+  .chapter h4{
+    font-family: var(--font-display); font-size: 16px; font-weight: 600;
+    margin: 22px 0 10px; color: var(--paper);
+  }
+  .chapter p{ color: var(--paper-dim); margin-bottom: 14px; max-width: 68ch; }
+  .chapter p strong{ color: var(--paper); font-weight: 600; }
+  .chapter ul, .chapter ol{ color: var(--paper-dim); margin: 0 0 14px 20px; max-width: 66ch; }
+  .chapter li{ margin-bottom: 6px; }
+  .chapter li strong{ color: var(--paper); }
+  .chapter code{
+    font-family: var(--font-mono); font-size: 0.88em;
+    background: var(--ink-card); border: 1px solid var(--line);
+    border-radius: 6px; padding: 1px 7px; color: var(--teal);
+  }
+
+  table{
+    width: 100%; border-collapse: collapse; margin: 18px 0;
+    font-size: 14px; background: var(--ink-card);
+    border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  }
+  thead th{
+    font-family: var(--font-mono); font-size: 12px; font-weight: 400;
+    color: var(--signal); text-align: left; padding: 12px 16px;
+    border-bottom: 1px solid var(--line-strong); background: rgba(255,159,28,0.05);
+  }
+  tbody td{ padding: 11px 16px; border-bottom: 1px solid var(--line); color: var(--paper-dim); }
+  tbody tr:last-child td{ border-bottom: none; }
+  tbody td:first-child{ color: var(--paper); }
+  tbody td.num, thead th.num{ text-align: right; font-family: var(--font-mono); font-size: 13px; }
+  tbody tr.highlight td{ color: var(--teal); }
+
+  figure{ margin: 22px 0; }
+  figure svg{ width: 100%; height: auto; display: block; background: var(--ink-card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  figcaption{ font-family: var(--font-mono); font-size: 12px; color: var(--paper-dim); margin-top: 10px; text-align: center; }
+
+  .conclusion{
+    background: var(--ink-card); border: 1px solid var(--line-strong);
+    border-radius: 20px; padding: 36px; margin-bottom: 60px;
+  }
+  .conclusion h2{
+    font-family: var(--font-display); font-size: clamp(1.4rem, 2.6vw, 1.8rem);
+    font-weight: 600; margin-bottom: 16px;
+  }
+  .conclusion p{ color: var(--paper-dim); margin-bottom: 14px; max-width: 66ch; }
+  .conclusion p strong{ color: var(--paper); }
+  blockquote{
+    border-left: 3px solid var(--signal); padding: 6px 0 6px 20px; margin: 20px 0;
+    font-family: var(--font-display); font-size: 19px; color: var(--paper); max-width: 60ch;
+  }
+
+  .back-row{ display:flex; flex-wrap:wrap; gap:12px; margin: 56px 0 80px; }
+  .btn{
+    font-weight: 500; font-size: 14.5px; padding: 12px 24px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+    transition: background .2s, border-color .2s, color .2s;
+  }
+  .btn-primary{ background: var(--paper); color: var(--ink); }
+  .btn-primary:hover{ background: var(--signal); }
+  .btn-ghost{ border: 1px solid var(--line-strong); color: var(--paper); }
+  .btn-ghost:hover{ border-color: var(--signal); color: var(--signal); }
+
+  footer{ border-top: 1px solid var(--line); padding: 28px 0 40px; position: relative; z-index: 1; font-size: 13px; color: var(--paper-dim); }
+  footer .wrap{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; font-family: var(--font-mono); font-size: 13px; color: var(--paper-dim); }
+
+  @media (max-width: 720px){
+    .wrap{ padding: 0 18px; }
+    nav{ height: 64px; }
+    header .back-link span{ display:none; }
+    .hero{ padding: 110px 0 40px; }
+    .hero h1{ font-size: clamp(32px, 9vw, 56px); }
+    .hero .sub{ font-size: 16px; }
+    .kpis{ grid-template-columns: 1fr 1fr; gap: 10px; }
+    .kpi{ padding: 14px; }
+    .kpi .label{ font-size: 11px; }
+    .kpi .value{ font-size: 22px; color: #FFD93B; }
+    .chapter h2{ font-size: clamp(26px, 7vw, 38px); }
+    table{ display:block; overflow-x:auto; white-space:nowrap; }
+    figure{ overflow-x:auto; }
+    figure svg{ min-width: 520px; height:auto; }
+    .back-row{ flex-direction:column; align-items:flex-start; }
+    footer .wrap{ flex-direction:column; align-items:flex-start; }
+  }
+  @media (max-width: 420px){
+    .kpis{ grid-template-columns: 1fr; }
+    figure svg{ min-width: 460px; }
+    table{ font-size: 12px; }
+    thead th, tbody td{ padding: 8px 10px; }
+    tbody td.num, thead th.num{ font-size: 11px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    html{ scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="wrap" aria-label="Page navigation">
+    <a class="back-link" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to portfolio
+    </a>
+    <a class="nav-gh" href="https://github.com/owoademartin16-lgtm/loan-risk-analytics" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.93c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.2.67.8.55A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>
+      View on GitHub
+    </a>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="article-head">
+      <div class="kicker">case study · credit risk · lending club</div>
+      <h1>Credit Risk Analysis and Loan Default Prediction</h1>
+      <p class="lede">Lending institutions need to assess the risk of borrowers failing to repay their loans. Approving without proper checks can lead to losses, while being too strict can deny credit to those who can repay.<br><br>Using about 1.35 million LendingClub loan records, I analyzed loan amounts, credit scores, debt-to-income ratios, loan purposes, employment length, states, and default trends over time to find what drives defaults. I also built and tested three machine learning models to see if those factors could help identify loans more likely to default and support better lending decisions.</p>
+
+      <div class="key-results">
+        <div class="kr"><div class="n">1,347,681</div><div class="t">loans analyzed</div></div>
+        <div class="kr"><div class="n">269,249</div><div class="t">defaulted loans</div></div>
+        <div class="kr"><div class="n">1,078,432</div><div class="t">non-defaulted loans</div></div>
+        <div class="kr"><div class="n">19.98%</div><div class="t">default rate</div></div>
+      </div>
+    </div>
+
+    <article>
+          <article>
+      <section class="chapter" id="overview">
+        <div class="chnum">01 · project overview</div>
+        <h2>Project overview</h2>
+        <p>Why do some borrowers repay their loans while others default? And can historical loan data help a lender spot potential repayment problems before approving a loan?</p>
+        <p>I explored these questions using approximately 1.35 million LendingClub loan records. The project started with an analysis of loan repayment patterns and expanded into a machine learning exercise to see how well borrower and loan information could distinguish defaulted loans from non-defaulted loans.</p>
+        <p>I focused on seven areas: loan amount, credit score, debt-to-income ratio, loan purpose, employment length, state, and changes in default rates over time. After examining these patterns, I trained and compared three classification models: Decision Tree, Random Forest, and CatBoost.</p>
+        <p>What stood out was how differently borrowers behaved across loan groups. Default rates were higher among borrowers with lower credit scores, higher debt-to-income ratios, and larger loans. Small business loans also had a notably high default rate. I then examined whether these patterns could help a machine learning model identify loans at greater risk of default.</p>
+      </section>
+
+      <section class="chapter" id="business">
+        <div class="chnum">02 · the business question</div>
+        <h2>The business question</h2>
+        <p>For a lender, approving a loan is only part of the decision. The bigger question is whether the borrower is likely to repay it.</p>
+        <p>A lender that approves too many loans that eventually default can face financial losses. On the other hand, rejecting borrowers who could repay their loans means missing legitimate lending opportunities.</p>
+        <p>I wanted to understand what the historical records could tell us about that trade-off.</p>
+        <p>The main questions I investigated were:</p>
+        <ul>
+          <li>Do larger loans have higher default rates?</li>
+          <li>How much do default rates differ across credit score groups?</li>
+          <li>Which loan purposes have the highest observed default rates?</li>
+          <li>What happens to default rates as borrowers' debt-to-income ratios increase?</li>
+          <li>Are there noticeable differences across states and employment groups?</li>
+          <li>Have default rates changed across loan issue years?</li>
+          <li>Can a machine learning model identify a useful share of loans that eventually default?</li>
+        </ul>
+      </section>
+
+      <section class="chapter" id="data">
+        <div class="chnum">03 · about the data</div>
+        <h2>About the data</h2>
+        <p>The dataset contained 1,347,681 loan records, including borrower characteristics, loan details, and repayment outcomes.</p>
+        <table>
+          <thead><tr><th>Dataset measure</th><th class="num">Number</th></tr></thead>
+          <tbody>
+            <tr><td>Total loans</td><td class="num">1,347,681</td></tr>
+            <tr><td>Non-defaulted loans</td><td class="num">1,078,432</td></tr>
+            <tr><td>Defaulted loans</td><td class="num">269,249</td></tr>
+            <tr><td>Overall default rate</td><td class="num">19.98%</td></tr>
+          </tbody>
+        </table>
+        <p>Roughly one in five loans in the dataset was classified as defaulted.</p>
+      </section>
+
+      <section class="chapter" id="loan-amount">
+        <div class="chnum">04 · larger loans had higher default rates</div>
+        <h2>Larger loans had higher default rates</h2>
+        <p>I grouped loans into amount ranges and calculated the default rate for each group.</p>
+        <table>
+          <thead><tr><th>Loan amount</th><th class="num">Number of loans</th><th class="num">Default rate</th><th class="num">Average loan amount</th></tr></thead>
+          <tbody>
+            <tr><td>$0–$5,000</td><td class="num">182,926</td><td class="num">15.81%</td><td class="num">$3,656.96</td></tr>
+            <tr><td>$5,000–$10,000</td><td class="num">374,395</td><td class="num">17.24%</td><td class="num">$8,104.58</td></tr>
+            <tr><td>$10,000–$15,000</td><td class="num">284,123</td><td class="num">20.78%</td><td class="num">$13,009.30</td></tr>
+            <tr><td>$15,000–$20,000</td><td class="num">214,309</td><td class="num">22.63%</td><td class="num">$18,142.30</td></tr>
+            <tr><td>$20,000–$25,000</td><td class="num">133,199</td><td class="num">22.81%</td><td class="num">$23,257.61</td></tr>
+            <tr><td>$25,000–$30,000</td><td class="num">77,404</td><td class="num">23.18%</td><td class="num">$28,469.82</td></tr>
+            <tr><td>$30,000+</td><td class="num">81,325</td><td class="num">24.48%</td><td class="num">$34,781.01</td></tr>
+          </tbody>
+        </table>
+        <figure>
+          <svg viewBox="0 0 560 240" role="img" aria-label="Default rate by loan amount range">
+            <text x="0" y="16" font-family="Space Mono, monospace" font-size="11" fill="#A9AFA0">default rate (%) by loan amount</text>
+            <g transform="translate(-40,0)">
+            <line x1="90" y1="30" x2="90" y2="190" stroke="rgba(237,234,217,0.25)"/>
+            <line x1="90" y1="190" x2="540" y2="190" stroke="rgba(237,234,217,0.25)"/>
+            <rect x="110" y="158" width="50" height="32" rx="4" fill="#E96B6B"/>
+            <rect x="175" y="152" width="50" height="38" rx="4" fill="#E96B6B" opacity="0.9"/>
+            <rect x="240" y="138" width="50" height="52" rx="4" fill="#E96B6B" opacity="0.9"/>
+            <rect x="305" y="129" width="50" height="61" rx="4" fill="#E96B6B"/>
+            <rect x="370" y="128" width="50" height="62" rx="4" fill="#E96B6B"/>
+            <rect x="435" y="127" width="50" height="63" rx="4" fill="#E96B6B"/>
+            <rect x="500" y="120" width="50" height="70" rx="4" fill="#E96B6B"/>
+            <text x="135" y="153" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">15.81</text>
+            <text x="200" y="147" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">17.24</text>
+            <text x="265" y="133" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">20.78</text>
+            <text x="330" y="124" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">22.63</text>
+            <text x="395" y="123" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">22.81</text>
+            <text x="460" y="122" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">23.18</text>
+            <text x="525" y="115" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">24.48</text>
+            <text x="135" y="208" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">$0–5k</text>
+            <text x="200" y="208" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">$5k–10k</text>
+            <text x="265" y="208" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">$10k–15k</text>
+            <text x="330" y="208" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">$15k–20k</text>
+            <text x="395" y="208" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">$20k–25k</text>
+            <text x="460" y="208" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">$25k–30k</text>
+            <text x="525" y="208" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">$30k+</text>
+            </g>
+          </svg>
+          <figcaption>Default rate climbs as loan size goes up.</figcaption>
+        </figure>
+        <p>The pattern was fairly clear. The default rate increased from 15.81% for loans up to $5,000 to 24.48% for loans of $30,000 or more. That is a difference of 8.67 percentage points.</p>
+        <p><strong>What I took from this:</strong> Loan size was worth examining as part of the credit assessment, but it would be a mistake to use it on its own.</p>
+      </section>
+
+      <section class="chapter" id="fico">
+        <div class="chnum">05 · credit score was one of the clearest risk indicators</div>
+        <h2>Credit score was one of the clearest risk indicators</h2>
+        <p>I grouped borrowers by FICO score to compare their default rates.</p>
+        <table>
+          <thead><tr><th>FICO score range</th><th class="num">Number of loans</th><th class="num">Default rate</th><th class="num">Average FICO score</th></tr></thead>
+          <tbody>
+            <tr><td>580–619</td><td class="num">3</td><td class="num">33.33%</td><td class="num">613.67</td></tr>
+            <tr><td>620–659</td><td class="num">486</td><td class="num">30.86%</td><td class="num">649.49</td></tr>
+            <tr><td>660–699</td><td class="num">822,026</td><td class="num">23.60%</td><td class="num">677.93</td></tr>
+            <tr><td>700–739</td><td class="num">379,874</td><td class="num">16.08%</td><td class="num">715.61</td></tr>
+            <tr><td>740+</td><td class="num">145,292</td><td class="num">9.65%</td><td class="num">767.15</td></tr>
+          </tbody>
+        </table>
+        <figure>
+          <svg viewBox="0 0 560 230" role="img" aria-label="Default rate by FICO band">
+            <text x="0" y="16" font-family="Space Mono, monospace" font-size="11" fill="#A9AFA0">default rate (%) by fico band</text>
+            <g transform="translate(-25,0)">
+            <line x1="90" y1="30" x2="90" y2="180" stroke="rgba(237,234,217,0.25)"/>
+            <line x1="90" y1="180" x2="540" y2="180" stroke="rgba(237,234,217,0.25)"/>
+            <rect x="110" y="55" width="65" height="125" rx="4" fill="#E96B6B"/>
+            <rect x="190" y="63" width="65" height="117" rx="4" fill="#E96B6B" opacity="0.9"/>
+            <rect x="270" y="91" width="65" height="89" rx="4" fill="#FF9F1C"/>
+            <rect x="350" y="120" width="65" height="60" rx="4" fill="#F59E0B" opacity="0.9"/>
+            <rect x="430" y="144" width="65" height="36" rx="4" fill="#3DDC97"/>
+            <text x="142.5" y="50" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">33.33</text>
+            <text x="222.5" y="58" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">30.86</text>
+            <text x="302.5" y="86" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">23.60</text>
+            <text x="382.5" y="115" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">16.08</text>
+            <text x="462.5" y="139" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9" text-anchor="middle">9.65</text>
+            <text x="142.5" y="198" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">580–619</text>
+            <text x="222.5" y="198" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">620–659</text>
+            <text x="302.5" y="198" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">660–699</text>
+            <text x="382.5" y="198" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">700–739</text>
+            <text x="462.5" y="198" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="middle">740+</text>
+            </g>
+          </svg>
+          <figcaption>Higher FICO scores went with lower default rates.</figcaption>
+        </figure>
+        <p>Borrowers scoring 660–699 had a default rate of 23.60%. For 700–739 it fell to 16.08%. For 740+ it was 9.65%. The higher-score group had less than half the default rate of the 660–699 group.</p>
+        <p><strong>What I took from this:</strong> Credit score was one of the strongest indicators to investigate further in the predictive model.</p>
+      </section>
+
+      <section class="chapter" id="purpose">
+        <div class="chnum">06 · small business loans had the highest default rate by purpose</div>
+        <h2>Small business loans had the highest default rate by purpose</h2>
+        <table>
+          <thead><tr><th>Loan purpose</th><th class="num">Number of loans</th><th class="num">Default rate</th><th class="num">Average loan amount</th></tr></thead>
+          <tbody>
+            <tr><td>Small business</td><td class="num">15,575</td><td class="num">29.86%</td><td class="num">$15,631.85</td></tr>
+            <tr><td>Renewable energy</td><td class="num">936</td><td class="num">23.72%</td><td class="num">$10,004.33</td></tr>
+            <tr><td>Moving</td><td class="num">9,520</td><td class="num">23.41%</td><td class="num">$7,852.97</td></tr>
+            <tr><td>House</td><td class="num">7,294</td><td class="num">21.91%</td><td class="num">$15,354.47</td></tr>
+            <tr><td>Medical</td><td class="num">15,606</td><td class="num">21.84%</td><td class="num">$8,990.00</td></tr>
+            <tr><td>Debt consolidation</td><td class="num">781,206</td><td class="num">21.15%</td><td class="num">$15,224.05</td></tr>
+            <tr><td>Other</td><td class="num">78,263</td><td class="num">21.08%</td><td class="num">$9,812.18</td></tr>
+            <tr><td>Educational</td><td class="num">423</td><td class="num">20.80%</td><td class="num">$6,616.08</td></tr>
+            <tr><td>Vacation</td><td class="num">9,083</td><td class="num">19.19%</td><td class="num">$6,189.07</td></tr>
+            <tr><td>Major purchase</td><td class="num">29,543</td><td class="num">18.60%</td><td class="num">$11,817.52</td></tr>
+            <tr><td>Home improvement</td><td class="num">87,684</td><td class="num">17.76%</td><td class="num">$14,131.56</td></tr>
+            <tr><td>Credit card</td><td class="num">295,551</td><td class="num">16.93%</td><td class="num">$14,804.49</td></tr>
+            <tr><td>Car</td><td class="num">14,647</td><td class="num">14.70%</td><td class="num">$8,836.90</td></tr>
+            <tr><td>Wedding</td><td class="num">2,350</td><td class="num">12.43%</td><td class="num">$10,465.85</td></tr>
+          </tbody>
+        </table>
+        <figure>
+          <svg viewBox="0 0 560 320" role="img" aria-label="Default rate by loan purpose">
+            <text x="0" y="16" font-family="Space Mono, monospace" font-size="11" fill="#A9AFA0">default rate (%) by loan purpose</text>
+            <line x1="170" y1="30" x2="170" y2="286" stroke="rgba(237,234,217,0.25)"/>
+            <text x="165" y="52" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">small_business</text>
+            <rect x="170" y="42" width="339" height="16" rx="4" fill="#E96B6B"/>
+            <text x="515" y="54" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">29.86</text>
+            <text x="165" y="74" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">renewable_energy</text>
+            <rect x="170" y="64" width="269" height="16" rx="4" fill="#E96B6B" opacity="0.9"/>
+            <text x="445" y="76" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">23.72</text>
+            <text x="165" y="96" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">moving</text>
+            <rect x="170" y="86" width="266" height="16" rx="4" fill="#E96B6B" opacity="0.9"/>
+            <text x="442" y="98" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">23.41</text>
+            <text x="165" y="118" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">house</text>
+            <rect x="170" y="108" width="249" height="16" rx="4" fill="#FF9F1C"/>
+            <text x="425" y="120" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">21.91</text>
+            <text x="165" y="140" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">medical</text>
+            <rect x="170" y="130" width="248" height="16" rx="4" fill="#FF9F1C"/>
+            <text x="424" y="142" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">21.84</text>
+            <text x="165" y="162" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">debt_consolidation</text>
+            <rect x="170" y="152" width="240" height="16" rx="4" fill="#FF9F1C" opacity="0.9"/>
+            <text x="416" y="164" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">21.15</text>
+            <text x="165" y="184" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">other</text>
+            <rect x="170" y="174" width="239" height="16" rx="4" fill="#FF9F1C" opacity="0.9"/>
+            <text x="415" y="186" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">21.08</text>
+            <text x="165" y="206" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">credit_card</text>
+            <rect x="170" y="196" width="192" height="16" rx="4" fill="#3DDC97" opacity="0.9"/>
+            <text x="368" y="208" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">16.93</text>
+            <text x="165" y="228" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">car</text>
+            <rect x="170" y="218" width="167" height="16" rx="4" fill="#3DDC97" opacity="0.9"/>
+            <text x="343" y="230" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">14.70</text>
+            <text x="165" y="250" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">wedding</text>
+            <rect x="170" y="240" width="141" height="16" rx="4" fill="#3DDC97"/>
+            <text x="317" y="252" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">12.43</text>
+          </svg>
+          <figcaption>Small business topped the list for risk.</figcaption>
+        </figure>
+        <p>Small business loans stood out with a default rate of 29.86% - the highest among the listed purposes. Debt consolidation was the most common by far with 781,206 loans at 21.15%.</p>
+      </section>
+
+      <section class="chapter" id="states">
+        <div class="chnum">07 · default rates differed across states</div>
+        <h2>Default rates differed across states</h2>
+        <p>I compared default rates by borrower state to see where the recorded loan outcomes differed most. Location alone doesn't explain credit risk, but it can reveal regional differences in borrower profiles or lending patterns worth investigating.</p>
+        <p>To keep the comparison manageable, I focused on the ten states with the highest observed default rates in the dataset.</p>
+        <table>
+          <thead><tr><th>State</th><th class="num">Number of loans</th><th class="num">Default rate</th></tr></thead>
+          <tbody>
+            <tr><td>Mississippi</td><td class="num">6,593</td><td class="num">26.12%</td></tr>
+            <tr><td>Nebraska</td><td class="num">3,591</td><td class="num">25.20%</td></tr>
+            <tr><td>Arkansas</td><td class="num">10,058</td><td class="num">24.11%</td></tr>
+            <tr><td>Alabama</td><td class="num">16,640</td><td class="num">23.64%</td></tr>
+            <tr><td>Oklahoma</td><td class="num">12,291</td><td class="num">23.46%</td></tr>
+            <tr><td>Louisiana</td><td class="num">15,520</td><td class="num">23.17%</td></tr>
+            <tr><td>New York</td><td class="num">110,075</td><td class="num">22.05%</td></tr>
+            <tr><td>Nevada</td><td class="num">20,282</td><td class="num">21.98%</td></tr>
+            <tr><td>Florida</td><td class="num">95,815</td><td class="num">21.50%</td></tr>
+            <tr><td>Indiana</td><td class="num">21,720</td><td class="num">21.44%</td></tr>
+          </tbody>
+        </table>
+        <figure>
+          <svg viewBox="0 0 560 320" role="img" aria-label="Default rate by state">
+            <text x="0" y="16" font-family="Space Mono, monospace" font-size="11" fill="#A9AFA0">default rate (%) by state (top 10)</text>
+            <line x1="130" y1="30" x2="130" y2="286" stroke="rgba(237,234,217,0.25)"/>
+            <text x="125" y="52" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">Mississippi</text>
+            <rect x="130" y="42" width="296" height="16" rx="4" fill="#E96B6B"/>
+            <text x="432" y="54" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">26.12</text>
+            <text x="125" y="74" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">Nebraska</text>
+            <rect x="130" y="64" width="286" height="16" rx="4" fill="#E96B6B" opacity="0.9"/>
+            <text x="422" y="76" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">25.20</text>
+            <text x="125" y="96" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">Arkansas</text>
+            <rect x="130" y="86" width="273" height="16" rx="4" fill="#E96B6B" opacity="0.9"/>
+            <text x="409" y="98" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">24.11</text>
+            <text x="125" y="118" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">Alabama</text>
+            <rect x="130" y="108" width="268" height="16" rx="4" fill="#FF9F1C"/>
+            <text x="404" y="120" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">23.64</text>
+            <text x="125" y="140" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">Oklahoma</text>
+            <rect x="130" y="130" width="266" height="16" rx="4" fill="#FF9F1C"/>
+            <text x="402" y="142" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">23.46</text>
+            <text x="125" y="162" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">Louisiana</text>
+            <rect x="130" y="152" width="263" height="16" rx="4" fill="#FF9F1C" opacity="0.9"/>
+            <text x="399" y="164" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">23.17</text>
+            <text x="125" y="184" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">New York</text>
+            <rect x="130" y="174" width="250" height="16" rx="4" fill="#FF9F1C" opacity="0.9"/>
+            <text x="386" y="186" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">22.05</text>
+            <text x="125" y="206" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">Nevada</text>
+            <rect x="130" y="196" width="249" height="16" rx="4" fill="#3DDC97" opacity="0.9"/>
+            <text x="385" y="208" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">21.98</text>
+            <text x="125" y="228" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">Florida</text>
+            <rect x="130" y="218" width="244" height="16" rx="4" fill="#3DDC97" opacity="0.9"/>
+            <text x="380" y="230" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">21.50</text>
+            <text x="125" y="250" font-family="Space Mono, monospace" font-size="10" fill="#A9AFA0" text-anchor="end">Indiana</text>
+            <rect x="130" y="240" width="243" height="16" rx="4" fill="#3DDC97"/>
+            <text x="379" y="252" font-family="Space Mono, monospace" font-size="10" fill="#EDEAD9">21.44</text>
+          </svg>
+          <figcaption>Default rates vary by state in the dataset.</figcaption>
+        </figure>
+        <p>Mississippi had the highest rate among the ten states shown at 26.12%, followed by Nebraska (25.20%) and Arkansas (24.11%). Several southern states appeared near the top of the list, while larger states like New York and Florida showed moderate rates despite their much larger loan volumes.</p>
+        <p><strong>Key finding:</strong> State-level differences exist, but they don't establish causality. The differences could reflect borrower characteristics, loan terms, or other factors not captured in this comparison.</p>
+      </section>
+
+      <section class="chapter" id="years">
+        <div class="chnum">08 · default risk changed across loan issue years</div>
+        <h2>Loan default rate by issue year</h2>
+        <p>I looked at default rates by the year a loan was issued to see how they changed over time. Default rates tend to move with the economic cycle, and it's also important to account for how much time has passed for loans to reach their final outcome.</p>
+        <p>The dataset spans loans issued from 2007 through 2018, with volume growing dramatically after 2012. Looking at cohorts over time helps show how risk evolved across different lending periods.</p>
+        <table>
+          <thead><tr><th>Issue year</th><th class="num">Number of loans</th><th class="num">Default rate</th></tr></thead>
+          <tbody>
+            <tr><td>2007</td><td class="num">599</td><td class="num">26.38%</td></tr>
+            <tr><td>2008</td><td class="num">2,393</td><td class="num">20.73%</td></tr>
+            <tr><td>2009</td><td class="num">5,281</td><td class="num">13.69%</td></tr>
+            <tr><td>2010</td><td class="num">12,537</td><td class="num">14.01%</td></tr>
+            <tr><td>2011</td><td class="num">21,721</td><td class="num">15.18%</td></tr>
+            <tr><td>2012</td><td class="num">53,367</td><td class="num">16.20%</td></tr>
+            <tr><td>2013</td><td class="num">134,804</td><td class="num">15.60%</td></tr>
+            <tr><td>2014</td><td class="num">223,102</td><td class="num">18.45%</td></tr>
+            <tr><td>2015</td><td class="num">375,543</td><td class="num">20.18%</td></tr>
+            <tr><td>2016</td><td class="num">293,057</td><td class="num">23.28%</td></tr>
+            <tr><td>2017</td><td class="num">169,117</td><td class="num">23.13%</td></tr>
+            <tr><td>2018</td><td class="num">56,160</td><td class="num">15.75%</td></tr>
+          </tbody>
+        </table>
+        <figure>
+          <svg viewBox="0 0 560 240" role="img" aria-label="Default rate by issue year">
+            <text x="0" y="16" font-family="Space Mono, monospace" font-size="11" fill="#A9AFA0">default rate (%) by issue year</text>
+            <line x1="60" y1="30" x2="60" y2="190" stroke="rgba(237,234,217,0.25)"/>
+            <line x1="60" y1="190" x2="540" y2="190" stroke="rgba(237,234,217,0.25)"/>
+            <polyline points="80,72 125,110 170,160 215,159 260,150 305,141 350,148 395,126 440,111 485,93 530,95" fill="none" stroke="#E96B6B" stroke-width="2.5"/>
+            <circle cx="80" cy="72" r="4" fill="#E96B6B"/>
+            <circle cx="125" cy="110" r="4" fill="#E96B6B"/>
+            <circle cx="170" cy="160" r="4" fill="#E96B6B"/>
+            <circle cx="215" cy="159" r="4" fill="#E96B6B"/>
+            <circle cx="260" cy="150" r="4" fill="#E96B6B"/>
+            <circle cx="305" cy="141" r="4" fill="#E96B6B"/>
+            <circle cx="350" cy="148" r="4" fill="#E96B6B"/>
+            <circle cx="395" cy="126" r="4" fill="#E96B6B"/>
+            <circle cx="440" cy="111" r="4" fill="#E96B6B"/>
+            <circle cx="485" cy="93" r="4" fill="#E96B6B"/>
+            <circle cx="530" cy="95" r="4" fill="#E96B6B"/>
+            <text x="80" y="62" font-family="Space Mono, monospace" font-size="9" fill="#EDEAD9" text-anchor="middle">26.38</text>
+            <text x="125" y="100" font-family="Space Mono, monospace" font-size="9" fill="#EDEAD9" text-anchor="middle">20.73</text>
+            <text x="170" y="150" font-family="Space Mono, monospace" font-size="9" fill="#EDEAD9" text-anchor="middle">13.69</text>
+            <text x="215" y="149" font-family="Space Mono, monospace" font-size="9" fill="#EDEAD9" text-anchor="middle">14.01</text>
+            <text x="260" y="140" font-family="Space Mono, monospace" font-size="9" fill="#EDEAD9" text-anchor="middle">15.18</text>
+            <text x="305" y="131" font-family="Space Mono, monospace" font-size="9" fill="#EDEAD9" text-anchor="middle">16.20</text>
+            <text x="350" y="138" font-family="Space Mono, monospace" font-size="9" fill="#EDEAD9" text-anchor="middle">15.60</text>
+            <text x="395" y="116" font-family="Space Mono, monospace" font-size="9" fill="#EDEAD9" text-anchor="middle">18.45</text>
+            <text x="440" y="101" font-family="Space Mono, monospace" font-size="9" fill="#EDEAD9" text-anchor="middle">20.18</text>
+            <text x="485" y="83" font-family="Space Mono, monospace" font-size="9" fill="#EDEAD9" text-anchor="middle">23.28</text>
+            <text x="530" y="85" font-family="Space Mono, monospace" font-size="9" fill="#EDEAD9" text-anchor="middle">23.13</text>
+            <text x="80" y="208" font-family="Space Mono, monospace" font-size="9" fill="#A9AFA0" text-anchor="middle">2007</text>
+            <text x="125" y="208" font-family="Space Mono, monospace" font-size="9" fill="#A9AFA0" text-anchor="middle">2008</text>
+            <text x="170" y="208" font-family="Space Mono, monospace" font-size="9" fill="#A9AFA0" text-anchor="middle">2009</text>
+            <text x="215" y="208" font-family="Space Mono, monospace" font-size="9" fill="#A9AFA0" text-anchor="middle">2010</text>
+            <text x="260" y="208" font-family="Space Mono, monospace" font-size="9" fill="#A9AFA0" text-anchor="middle">2011</text>
+            <text x="305" y="208" font-family="Space Mono, monospace" font-size="9" fill="#A9AFA0" text-anchor="middle">2012</text>
+            <text x="350" y="208" font-family="Space Mono, monospace" font-size="9" fill="#A9AFA0" text-anchor="middle">2013</text>
+            <text x="395" y="208" font-family="Space Mono, monospace" font-size="9" fill="#A9AFA0" text-anchor="middle">2014</text>
+            <text x="440" y="208" font-family="Space Mono, monospace" font-size="9" fill="#A9AFA0" text-anchor="middle">2015</text>
+            <text x="485" y="208" font-family="Space Mono, monospace" font-size="9" fill="#A9AFA0" text-anchor="middle">2016</text>
+            <text x="530" y="208" font-family="Space Mono, monospace" font-size="9" fill="#A9AFA0" text-anchor="middle">2017</text>
+          </svg>
+          <figcaption>Defaults shifted with the economic cycle.</figcaption>
+        </figure>
+        <p>The default rate was highest early on at 26.38% in 2007 (though only 599 loans). It fell sharply to 13.69% in 2009, stayed relatively low through 2013, then rose steadily as issuance picked up, reaching 23.28% in 2016 and 23.13% in 2017. The 2018 cohort shows a lower rate at 15.75%.</p>
+        <p><strong>Key finding:</strong> Default rates varied significantly over time. More recent cohorts may not have matured fully, so the drop in 2018 should be interpreted with caution.</p>
+      </section>
+
+      <section class="chapter" id="ml">
+        <div class="chnum">09 · machine learning</div>
+        <h2>Machine learning building a loan default prediction model</h2>
+        <p>Using 1.35 million LendingClub records, I trained Decision Tree and Random Forest models to predict loan defaults based on borrower and loan characteristics.</p>
+        <h3>Selecting the features</h3>
+        <p>I selected seven input variables for the initial models.</p>
+        <table>
+          <thead><tr><th>Feature</th><th>Why it was included</th></tr></thead>
+          <tbody>
+            <tr><td>Loan amount (<code>loan_amnt</code>)</td><td>To examine whether the amount borrowed helps distinguish repayment outcomes.</td></tr>
+            <tr><td>FICO score (<code>fico_n</code>)</td><td>To capture differences in borrowers' credit scores.</td></tr>
+            <tr><td>Debt-to-income ratio (<code>dti_n</code>)</td><td>To represent the borrower's existing debt burden relative to income.</td></tr>
+            <tr><td>Employment length (<code>emp_length</code>)</td><td>To account for differences in recorded employment history.</td></tr>
+            <tr><td>Loan purpose (<code>purpose</code>)</td><td>To examine whether repayment patterns differ by the reason for borrowing.</td></tr>
+            <tr><td>Home ownership (<code>home_ownership_n</code>)</td><td>To include the borrower's recorded housing status.</td></tr>
+            <tr><td>State (<code>addr_state</code>)</td><td>To capture geographical differences in the historical loan records.</td></tr>
+          </tbody>
+        </table>
+        <h3>Preparing the data</h3>
+        <p>Numerical features were imputed with the median, categorical features with the most frequent category, and one-hot encoded. All steps were placed in a preprocessing pipeline for consistent application.</p>
+        <h3>Handling the difference between defaulted and nondefaulted loans</h3>
+        <p>With about 20% defaults, I used <code>class_weight="balanced"</code> to give more weight to the minority class during training.</p>
+        <h3>Training the models</h3>
+        <p>I trained a Decision Tree (max depth 12, min 100 samples per leaf) and a Random Forest (200 trees, max depth 16, min 100 samples per leaf), both with balanced class weights.</p>
+        <h3>Training and testing strategy</h3>
+        <p>I used a chronological split with earlier loans for training and more recent loans for testing. The test set had 269,537 records (55,516 defaults and 214,021 nondefaults).</p>
+        <h3>Model evaluation</h3>
+        <p>I compared models using accuracy, precision, recall, F1-score, and ROC-AUC.</p>
+        <table>
+          <thead><tr><th>Metric</th><th class="num">Decision Tree</th><th class="num">Random Forest</th></tr></thead>
+          <tbody>
+            <tr><td>Accuracy</td><td class="num">60.04%</td><td class="num">60.92%</td></tr>
+            <tr><td>Precision for defaults</td><td class="num">28.04%</td><td class="num">28.68%</td></tr>
+            <tr><td>Recall for defaults</td><td class="num">60.02%</td><td class="num">60.36%</td></tr>
+            <tr><td>F1-score for defaults</td><td class="num">38.22%</td><td class="num">38.89%</td></tr>
+            <tr><td>ROC-AUC</td><td class="num">0.6401</td><td class="num">0.6505</td></tr>
+          </tbody>
+        </table>
+        <p>Accuracy measures the share of all predictions that were correct. Precision measures how many loans flagged as defaults were actually recorded as defaults. Recall measures how many actual defaults the model successfully identified. F1-score balances precision and recall, while ROC-AUC measures how well the model ranks defaulted loans above non-defaulted loans across different classification thresholds.</p>
+        <p>The Random Forest performed slightly better than the Decision Tree across all five reported measures. Its accuracy was 60.92%, compared with 60.04% for the Decision Tree. Its ROC-AUC was also higher, at 0.6505 compared with 0.6401.</p>
+        <p>The improvement was modest, but it made the Random Forest the more promising of the two initial models.</p>
+        <h3>What the random forest results mean</h3>
+        <p>The Random Forest achieved a recall of 60.36% for the default class. In practical terms, it identified approximately six in ten loans that were recorded as defaults in the test set.</p>
+        <p>However, its precision was only 28.68%. This means that fewer than three in ten loans it flagged as potential defaults were actually recorded as defaults in the test set.</p>
+        <p>The confusion matrix makes this trade-off clearer:</p>
+        <table>
+          <thead><tr><th>Actual outcome</th><th class="num">Predicted non-default</th><th class="num">Predicted default</th></tr></thead>
+          <tbody>
+            <tr><td>Non-defaulted</td><td class="num">130,701</td><td class="num">83,320</td></tr>
+            <tr><td>Defaulted</td><td class="num">22,005</td><td class="num">33,511</td></tr>
+          </tbody>
+        </table>
+        <p>The model correctly identified 33,511 defaults, but it also flagged 83,320 non-defaulted loans as potential defaults. It missed another 22,005 actual defaults.</p>
+        <p>This is an important limitation. A lender using this model without additional checks could flag many borrowers who would otherwise repay their loans. On the other hand, the model did identify a substantial share of recorded defaults.</p>
+        <p>The results show that the model can distinguish some differences between the two groups, but its current predictions would need improvement before being considered useful for a real lending workflow.</p>
+        <h3>Why I kept the random forest as the initial baseline</h3>
+        <p>The Random Forest was slightly stronger than the Decision Tree on every reported evaluation metric. It also provided a useful starting point for examining feature importance.</p>
+        <p>The initial feature importance analysis showed that FICO score, debt-to-income ratio, and loan amount were the three leading individual features:</p>
+        <table>
+          <thead><tr><th>Feature</th><th class="num">Random Forest importance</th></tr></thead>
+          <tbody>
+            <tr><td>FICO score</td><td class="num">35.37%</td></tr>
+            <tr><td>Debt-to-income ratio</td><td class="num">21.32%</td></tr>
+            <tr><td>Loan amount</td><td class="num">15.42%</td></tr>
+          </tbody>
+        </table>
+        <p>Together, these three features accounted for approximately 72.1% of the model's total feature importance.</p>
+        <p>This aligned with the exploratory analysis, where credit score, debt-to-income ratio, and loan amount showed noticeable differences in observed default rates.</p>
+        <p>Feature importance indicates how the model used these variables when making predictions. It does not prove that they cause default, and it does not guarantee that the same ranking will hold in a different dataset or future lending period.</p>
+        <h3>Next stage improving the model</h3>
+        <p>The initial models provide a baseline, not a final solution. The next stage will focus on improving the balance between detecting defaults and avoiding false alarms.</p>
+        <p>My next steps are to:</p>
+        <ol>
+          <li>Tune the Random Forest's settings, including tree depth, number of trees, and minimum leaf size.</li>
+          <li>Use a separate validation set for model selection and classification threshold decisions.</li>
+          <li>Compare precision, recall, F1-score, ROC-AUC, and the confusion matrix after tuning.</li>
+          <li>Evaluate different thresholds to understand how many additional defaults can be detected and how many more non-defaulted loans may be flagged.</li>
+          <li>Check whether the test loans have sufficiently mature outcomes and whether the model's predicted probabilities are reliable.</li>
+          <li>Compare the tuned Random Forest with CatBoost using a consistent evaluation process.</li>
+        </ol>
+        <p>The objective is not simply to increase accuracy. It is to build a model that identifies a useful share of potential defaults while keeping incorrect risk flags at a level a lender could reasonably manage.</p>
+        <h3>Machine learning conclusion</h3>
+        <p>The initial machine learning experiments showed that historical loan information can help distinguish between defaulted and non-defaulted loans, but the current models still have important limitations.</p>
+        <p>The Random Forest performed slightly better than the Decision Tree and identified approximately 60% of recorded defaults. Its low precision, however, means that many loans were incorrectly flagged. The results therefore support further model development rather than immediate deployment.</p>
+        <p>The strongest individual features were FICO score, debt-to-income ratio, and loan amount, which also featured prominently in the exploratory analysis. The next stage is to tune the model, evaluate alternative classification thresholds using validation data, and assess its performance on an untouched test set.</p>
+        <p>The final aim is to turn the analysis into an interactive Streamlit application that demonstrates how borrower information can be used to estimate default risk, while making the model's limitations clear.</p>
+      </section>
+    </article>
+
+    <section class="conclusion">
+      <div class="chnum" style="font-family:var(--font-mono);font-size:13px;color:var(--signal);margin-bottom:8px">10 · bottom line</div>
+      <h2>Bottom line</h2>
+      <p>This project examined approximately 1.35 million loan records to understand the factors associated with loan default and investigate whether machine learning could help identify potential repayment risk.</p>
+      <p>The analysis found that larger loans and higher debt-to-income ratios were generally associated with higher default rates, while higher FICO score groups had lower observed default rates. Small business loans had the highest default rate among the listed loan purposes, and repayment outcomes varied across employment groups, states, and issue years.</p>
+      <p>The initial machine learning results identified FICO score, debt-to-income ratio, and loan amount as the strongest individual features in the Random Forest model. However, the model still incorrectly flagged many non-defaulted loans, demonstrating the need for further evaluation and tuning.</p>
+      <p>The broader lesson is that credit risk assessment benefits from combining historical analysis, borrower information, and carefully evaluated predictive models. With further validation, this work could form the basis of an interactive decision-support tool for exploring loan risk and supporting more informed lending decisions.</p>
+    </section>
+
+    <div class="back-row">
+      <a class="btn btn-primary" href="https://loan-risk-analytics.streamlit.app/" target="_blank" rel="noopener">Live Dashboard</a>
+      <a class="btn btn-ghost" href="https://github.com/owoademartin16-lgtm/loan-risk-analytics" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="btn btn-ghost" href="index.html#projects">Back to projects</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>&copy; <span id="year"></span> Martin Owoade</span>
+    <span>Built with Python, curiosity, and clean data</span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>
