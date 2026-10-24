@@ -167,32 +167,33 @@
   footer .wrap{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; font-family: var(--font-mono); font-size: 13px; color: var(--paper-dim); }
 
   @media (max-width: 720px){
-    .wrap{ padding: 0 16px; }
+    .wrap{ padding: 0 14px; }
     nav{ height: 64px; }
     header .back-link span{ display:none; }
     .hero{ padding: 110px 0 40px; }
-    .hero h1{ font-size: clamp(32px, 9vw, 56px); }
-    .hero .sub{ font-size: 16px; }
-    .kpis{ grid-template-columns: 1fr 1fr; gap: 10px; }
-    .kpi{ padding: 14px; }
-    .kpi .label{ font-size: 11px; }
-    .kpi .value{ font-size: 22px; color: #FFD93B; }
-    .chapter h2{ font-size: clamp(26px, 7vw, 38px); }
+    .hero h1{ font-size: clamp(30px, 9vw, 52px); }
+    .hero .sub{ font-size: 15px; }
+    .kpis{ grid-template-columns: 1fr 1fr; gap: 8px; }
+    .kpi{ padding: 12px; }
+    .kpi .label{ font-size: 10px; }
+    .kpi .value{ font-size: 18px; color: #FFD93B; }
+    .chapter h2{ font-size: clamp(24px, 7vw, 34px); }
     .table-wrap{ display:block; width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    table{ display:block; width:max-content; min-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:nowrap; }
-    thead, tbody, tr{ display:table; width:100%; table-layout:auto; }
-    thead th, tbody td{ padding: 10px 12px; white-space:nowrap; }
+    table{ display:table; width:100%; min-width: 0; font-size: 11.5px; table-layout: fixed; }
+    thead th, tbody td{ padding: 7px 8px; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+    tbody td.num, thead th.num{ font-size: 10.5px; }
     figure{ overflow-x:auto; -webkit-overflow-scrolling: touch; }
-    figure svg{ min-width: 520px; height:auto; }
+    figure svg{ min-width: 460px; height:auto; }
     .back-row{ flex-direction:column; align-items:flex-start; }
     footer .wrap{ flex-direction:column; align-items:flex-start; }
   }
   @media (max-width: 420px){
     .kpis{ grid-template-columns: 1fr; }
-    figure svg{ min-width: 460px; }
-    table{ font-size: 12px; }
-    thead th, tbody td{ padding: 8px 10px; }
-    tbody td.num, thead th.num{ font-size: 11px; }
+    .wrap{ padding: 0 12px; }
+    table{ font-size: 11px; }
+    thead th, tbody td{ padding: 6px 7px; }
+    tbody td.num, thead th.num{ font-size: 10px; }
+    figure svg{ min-width: 420px; }
   }
 
   @media (prefers-reduced-motion: reduce){
