@@ -1,96 +1,115 @@
-# Loan Risk Analytics — Loan Default Dashboard
+# Loan Repayment Risk — LendingClub Dashboard
 
-A multi-page Streamlit app for monitoring loan default risk on the *LC loans
-granting model dataset* (1,347,681 loans, Jun 2007 – Dec 2018).
+A white-canvas Streamlit report on **9,578 LendingClub loans**, built directly
+from `Loan Repayment Risk Analysis Report.ipynb`. It answers one question:
+which borrowers end up **not fully paying** their loan?
 
-* **Dashboard** — KPI summary and eleven notebook-faithful Plotly figures
-  that react to eight slicers (purpose, issue year, loan amount, FICO, DTI,
-  employment length, home ownership and state).
-* **Predict Default** — score a single loan application with the trained
-  Random Forest pipeline and get a green / amber / red risk assessment.
+* **Dashboard** — KPI summary and twelve figures reproduced from the report
+  notebook, driven by nine slicers.
+* **Predict Default** — score a single loan application with the report's best
+  model, the tuned XGBoost pipeline.
 
-The analysis that produced the data and the model lives in
-`Loan Risk Analytics.ipynb`; the app itself never retrains the model, never
-re-cleans the data and never writes to either asset.
+The app never retrains the deployed model and never rewrites the data. The
+only computations it performs are the notebook's own descriptive figures and a
+deterministic re-run of the notebook's 80/20 test split for the model tab.
+
+## The data
+
+| Property | Value |
+|---|---|
+| Source | `loan_data.csv` from the *Machine-Learning-with-Python* dataset collection |
+| Rows | 9,578 |
+| Columns | 14 |
+| Target | `not.fully.paid` (1 = not fully paid) |
+| Fully paid | 8,045 loans (83.99%) |
+| Not fully paid | 1,533 loans (16.01%) |
+| Average interest rate | 12.26% |
+
+Features the model consumes (notebook cell 25): `credit.policy`, `purpose`,
+`int.rate`, `installment`, `log.annual.inc`, `dti`, `fico`,
+`days.with.cr.line`, `revol.bal`, `revol.util`, `inq.last.6mths`,
+`delinq.2yrs`, `pub.rec`.
 
 ## Features
 
 ### Dashboard page
 
-* **KPI row** — total loans, defaulted loans, overall default rate and
-  average loan amount for the current selection.
-* **Slicers** — loan purpose, issue-year range, loan-amount range, FICO
-  range, debt-to-income range, employment length, home ownership and state.
-  They live in `app.py`, so they keep their state while you move between
-  pages, and every figure reacts to all of them at once.
-* **Eleven figures**, each rebuilt with the exact notebook logic — the same
-  bins, band labels, ordering, bar colour (`#2E86AB`), percentage labels and
-  axis headroom — and grouped into five tabs:
+* **KPI row** — total loans, not fully paid, non-full repayment rate and
+  average interest rate for the current selection.
+* **Nine slicers** — loan purpose, interest rate, monthly installment, credit
+  policy, FICO, debt-to-income, inquiries, delinquencies and public records.
+  They live in `app.py`, keep their state across pages, and every figure
+  reacts to all of them at once.
+* **Twelve figures**, each rebuilt with the exact notebook logic — same bins,
+  band labels, titles, ordering, one colour per figure, outside percentage
+  labels and `max × 1.15` axis headroom:
 
   | Tab | Figures |
   |---|---|
-  | Overview | Distribution of Loan Outcomes · Default Rate by Issue Year |
-  | Loan profile | Default Rate by Loan Amount · by Debt-to-Income Ratio · by Employment Length |
-  | Credit score | Default Rate by FICO Score Band · Default Rate by Credit Score group |
-  | Purpose & geography | Default Rate by Loan Purpose · 10 States with the Highest Default Rates |
-  | Model | model comparison table · CatBoost threshold sweep · top-20 Random Forest features |
+  | Overview | Non-Full Repayment Rate by Loan Purpose · by Interest Rate |
+  | Borrower | by FICO Score · by Debt-to-Income Ratio |
+  | Credit history | by Recent Credit Inquiries · Previous Delinquencies · Public Records |
+  | Installments | by Monthly Installment (ten `pd.cut` bins) |
+  | Model | model comparison · Decision Tree, XGBoost and tuned XGBoost confusion matrices · top-15 feature importance |
 
-* Purpose and state rankings only include groups with at least **100 loans**
-  in the current selection. Bars carry percentage labels and every y-axis has
-  headroom so the labels are never clipped.
-* The **Model** tab reports the notebook's recorded test-set scores:
-  Random Forest is the selected model with the best F1 (0.3889) and recall
-  (0.6036); CatBoost has the highest accuracy and ROC-AUC but flags only
-  0.26% of loans at its default threshold.
-
+* The bar colours match the notebook cell by cell: `#1f77b4` (purpose),
+  `#2ca02c` (interest), `#d62728` (FICO), `#ff7f0e` (DTI), `#9467bd`
+  (inquiries), `#8c564b` (delinquencies), `#bcbd22` (public records) and
+  `#1f77b4` (installment).
+* Empty bands are kept rather than dropped, exactly as in the notebook
+  (for example the empty "Below 600" FICO band).
 
 ### Predict Default page
 
-* A `st.form` built from `model/features.joblib` — the exact columns the
-  model was trained on:
-  `loan_amnt`, `fico_n`, `dti_n`, `emp_length`, `purpose`,
-  `home_ownership_n`, `addr_state`.
-* Numeric inputs are `number_input`s bounded by the observed minimum and
-  maximum and defaulting to the median; categorical inputs are `selectbox`es
-  populated with the values found in the data.
-* Features that carry too little of the model's importance to be worth
-  asking about (currently employment length and state) are filled in
-  automatically with the median (numeric) or the mode (categorical).
-* On submit a one-row DataFrame with exactly the model's columns, in order
-  and with matching dtypes, is passed to `predict_proba`. The result is shown
-  as a colour-coded risk assessment card:
-  **Low** (< 20 %, green), **Medium** (20–50 %, amber), **High** (> 50 %, red).
-  The card carries the predicted probability, the verdict, a segmented risk
-  meter with a marker at the predicted probability, an explanation of the
-  three bands and a tinted summary strip.
+* A form built from the 13 training columns. Income is entered in dollars and
+  log-transformed because the model consumes `log.annual.inc`.
+* Numeric defaults are the observed medians; `purpose` defaults to the mode.
+* On submit the one-row frame is scored by the saved tuned XGBoost pipeline and
+  shown as a colour-coded card: **Low** (< 20%, green), **Medium** (20–50%,
+  amber), **High** (> 50%, red), with the probability, a risk meter and the
+  three bands explained.
+
+## Model
+
+The notebook compares three models on a stratified 80/20 split
+(`random_state=42`, 1,916 test loans):
+
+| Model | Accuracy | Precision | Recall | F1 | ROC-AUC | PR-AUC |
+|---|---|---|---|---|---|---|
+| Decision Tree | 0.735 | 0.184 | 0.189 | 0.186 | 0.514 | 0.165 |
+| XGBoost | 0.687 | 0.243 | 0.450 | 0.315 | 0.656 | 0.259 |
+| **Tuned XGBoost** | **0.642** | **0.240** | **0.567** | **0.337** | **0.667** | **0.285** |
+
+The tuned XGBoost (`RandomizedSearchCV`, 30 iterations, 5-fold stratified CV)
+is the selected model: it has the best recall, F1, ROC-AUC and PR-AUC, which is
+what a repayment-risk screen needs. Its confusion matrix is
+`[[1057, 552], [133, 174]]` — 174 of the 307 problem loans are caught.
+
+The Model tab recomputes all three models deterministically from the same
+split, so its scores and matrices reproduce the notebook exactly.
 
 ## Project structure
 
 ```
 .
-├── app.py                       # entry point: page config, navigation, sidebar filters
-├── utils.py                     # cached loaders, banding, summaries, Plotly helpers
+├── app.py                        # entry point: page config, navigation, slicers
+├── loan_report.py                # data, slicers, notebook figures, model evaluation
 ├── pages/
-│   ├── dashboard.py             # KPI row + the eight charts
-│   └── predict_default.py       # application form + risk assessment card
-├── Loan Risk Analytics.ipynb    # the analysis notebook that produces the assets below
+│   ├── dashboard.py              # KPI row + the twelve figures
+│   └── predict_default.py        # application form + risk assessment card
+├── Loan Repayment Risk Analysis Report.ipynb   # the source analysis
 ├── data/
-│   └── loans_clean.parquet      # the cleaned loan data
+│   └── loan_data.csv             # the 9,578-loan dataset
 ├── model/
-│   ├── default_model.joblib     # the trained sklearn pipeline (preprocessor + forest)
-│   └── features.joblib          # the exact input column list
-├── requirements.txt
-└── legacy_single_page_app.py    # the earlier single-page version, kept for reference
+│   └── repayment_xgb_model.pkl   # the tuned XGBoost pipeline
+├── utils.py                      # shared white-theme CSS and risk-card helpers
+└── requirements.txt
 ```
 
-The supporting modules of the first single-page build (`dashboard.py`,
-`prediction_page.py`, `predictor.py`, `loan_data.py`, `charts.py`,
-`styles.py`) are kept in the repository as well, next to
-`legacy_single_page_app.py`, so the earlier version stays runnable.
-
-`utils.py` holds everything that is shared — the `@st.cache_data` data
-loader, the `@st.cache_resource` model loader, the band definitions, the
-grouped summaries and the Plotly figure builders — so both pages stay short.
+The earlier analysis (`Loan Risk Analytics.ipynb`, `data/loans_clean.parquet`,
+`model/default_model.joblib`, `pages/` history and the legacy single-page
+modules) is kept in the repository for reference but is no longer used by the
+app.
 
 ## Installation
 
@@ -98,156 +117,33 @@ Requires Python 3.13 (3.9+ should work).
 
 ```bash
 pip install -r requirements.txt
-```
-
-`scikit-learn` is pinned to **1.9.1** because the saved pipeline has to be
-unpickled with a compatible version.
-
-## Usage
-
-```bash
 streamlit run app.py
 ```
 
-Then open the URL printed in the terminal (default <http://localhost:8501>).
-
-## Data and model assets
-
-The three assets the app reads are the artefacts written by
-`Loan Risk Analytics.ipynb`:
-
-| Asset | What it is |
-|---|---|
-| `data/loans_clean.parquet` | The cleaned loan data (1,347,681 rows, 15 columns). |
-| `model/default_model.joblib` | The trained pipeline: median imputation → one-hot encoding → 200-tree Random Forest with balanced class weights. |
-| `model/features.joblib` | `['loan_amnt', 'fico_n', 'dti_n', 'emp_length', 'purpose', 'home_ownership_n', 'addr_state']` — the columns the pipeline consumes. |
-
-The raw `loan_risk_analytics.csv` (167 MB) is **not** part of the repository:
-GitHub rejects any file above 100 MB. The notebook downloads the same file
-directly from its Zenodo record (record `11295916`) and writes the cleaned
-parquet plus the model artefacts, so the pipeline below reproduces everything
-this app reads.
-
-`random_forest_loan_model.pkl` is the same pipeline, kept in the earlier
-pickle format for the legacy `predictor.py` module.
-
-### Columns
-
-| Column | Meaning |
-|---|---|
-| `id` | Unique loan identifier |
-| `issue_d` | Loan issue month, `Mon-YYYY` (e.g. `Dec-2015`) |
-| `revenue` | Borrower revenue/income figure as published; not used in any KPI |
-| `dti_n` | Debt-to-income ratio as published (observed range 0–999) |
-| `loan_amnt` | Funded loan amount in dollars |
-| `fico_n` | FICO score (observed range 612–847.5) |
-| `experience_c` | Binary experience flag (0/1) |
-| `emp_length` | Employment length (`< 1 year` … `10+ years`, `NI` = not indicated) |
-| `purpose` | Stated loan purpose (14 categories) |
-| `home_ownership_n` | `MORTGAGE`, `RENT`, `OWN`, `OTHER` |
-| `addr_state` | Borrower state (51 values incl. DC) |
-| `zip_code` | Masked zip code |
-| `Default` | **Target**: 0 = fully paid, 1 = defaulted |
-| `title` | Loan title free text |
-| `fico_group` | Binned FICO score (`600–649` … `800–849`), written by the notebook |
-
-### Data handling
-
-* No cleaning, imputation or feature engineering is performed by the app.
-  The only derived column is `issue_year`, which is parsed from `issue_d` so
-  the trend chart and the year filter have something to group on.
-* `emp_length = "NI"` stays **NI** on the employment-length chart, exactly as
-  in the notebook; the slicer lists it as **Missing** so the filter is readable.
-* Default rate = mean of `Default` × 100 within each group, using that
-  group's own loan count as the denominator.
-* Purpose and state rankings only include groups with at least **100 loans**
-  in the current selection.
-* Empty groups are dropped rather than charted as zeroes; an empty filter
-  selection shows a notice instead of a crash.
-
-## Analytical limitations
-
-- **Correlation, not causation.** Every chart is a descriptive comparison
-  between groups.
-- **Cohort maturity.** Loans issued in recent years have had less time to
-  default, so the issue-year default rate is not comparable across cohorts.
-  The newest cohorts are therefore understated.
-- **Minimum-sample threshold.** Purpose and state rankings exclude groups
-  with fewer than 100 loans; small groups produce noisy rates.
-- **Data ends December 2018.** The loan book is historical.
-- **Prediction is not a decision.** The model was trained with balanced
-  class weights, so its probabilities lean towards the minority class and
-  should be read as a relative risk score, not as a book-wide default
-  frequency. A single score should never be the sole basis for approving or
-  rejecting an application.
+Then open <http://localhost:8501>.
 
 ## Styling
 
-The global stylesheet lives in `utils.py` (`STYLE_CSS`) and is
-injected with `st.html()` by `app.py` (sidebar) and by each page script — with
-`st.navigation` the main script's own elements are only rendered on the
-default page, so the CSS has to be injected from the page scripts as well.
+The global stylesheet lives in `utils.py` (`STYLE_CSS`) and is injected by
+`app.py` and each page script. The design is a flat white canvas with a soft
+neutral sidebar rail (`#E7EBEA`), quiet white stat cards with a hairline
+border (`#E2E5E9`) and one colour rule per KPI. Typography is **Inter**.
 
-The app follows one flat design system: a white canvas, a soft neutral rail
-and quiet white stat cards, with colour used only where it carries meaning.
+The figures keep the report's own palette rather than the app accent colour,
+so each bar looks exactly as it does in the notebook. The prediction risk card
+keeps green `#0F7A52` / amber `#F59E0B` / red `#C0392B` for low / medium / high.
 
-| Token | Value | Where it is used |
-|---|---|---|
-| Ink | `#14181D` | headings, KPI labels, risk marker |
-| Black | `#000000` | the four KPI numbers and the selection line under the KPI row |
-| Muted | `#5B6570` | captions, axis labels, secondary text |
-| Hairline | `#E2E5E9` | card borders, rules |
-| Canvas | `#FFFFFF` | the page background behind the content |
-| Rail | `#E7EBEA` | the filter panel, a soft neutral so the page is not all white |
-| Tile | `#F4F6F5` | subtitle box, tab track |
-| Emerald | `#0F7A52` | the brand: the "Fully Paid" risk band, submit button, active navigation |
-| Notebook blue | `#2E86AB` | every default-rate bar in the dashboard figures |
-| Notebook orange | `#E4572E` | the "Defaulted" series in the outcome chart |
-| Risk | `#C0392B` | the high-risk band on the prediction card |
-| Amber | `#F59E0B` | the medium-risk band |
+## Analytical limitations
 
-The KPI row is four quiet stat cards: a white panel with a hairline border and
-a 16 px radius, an uppercase near-black label, the number in black at weight
-800, and a short 38 × 4 px rule in the colour of the metric underneath it —
-emerald `#1E9E6A` for total loans, red `#D64550` for defaulted loans, amber
-`#C98A17` for the overall default rate and slate `#55606B` for the average loan
-amount. Below 1280 px the row folds into two rows of two, and below 620 px into
-one column.
-
-Typography is **Inter** — loaded from Google Fonts (400–800), with Helvetica
-Neue as the offline fallback — and every chart uses the same typeface. The
-dashboard figures keep the notebook's own colourway (`#2E86AB`, `#E4572E`,
-`#1f77b4`) so a bar looks the same here as it does in the analysis.
-
-### Layout details
-
-* The content area is a plain white canvas; the sidebar is the only tinted
-  panel (a soft neutral, `#E7EBEA`).
-* Each page opens with a subtitle set in a flat grey box (rounded corners, no
-  border).
-* The KPI cards are the four white stat cards described above: a black number
-  and a coloured rule that names the metric.
-* The selection line under the KPI row ("Showing … of … loans") is printed in
-  true black at full opacity — Streamlit's default 60 % caption opacity is
-  cancelled so the line can never read as washed-out grey.
-* The charts keep a white canvas with a faint horizontal grid, so the bars —
-  not the frame — carry the reading.
-* The outcome chart pairs notebook blue `#2E86AB` "Fully Paid" with orange
-  `#E4572E` "Defaulted", exactly as in the notebook.
-* Every default-rate bar in the dashboard shares the notebook blue `#2E86AB`;
-  the employment-length figure keeps the notebook's `#1f77b4`, so each figure
-  matches its notebook cell.
-* The prediction risk bands keep their semantics: green `#0F7A52` (low), amber
-  `#F59E0B` (medium) and red `#C0392B` (high).
-
-### Motion
-
-* The four KPI cards fade in one after the other (0.07 s apart).
-* The chart switcher is a segmented control: the active tab holds the white
-  segment and the label lifts on hover.
-* Switching tabs replays the entrance animation of the panel and of its chart
-  cards, so every switch feels like the charts are being re-drawn. The
-  animation name changes with the active tab, which is what makes the motion
-  replay without any JavaScript.
-* Chart cards and KPI cards lift slightly on hover.
-
+- **Correlation, not causation.** Every dashboard figure is a descriptive
+  comparison between groups.
+- **Small book.** 9,578 loans and 1,533 problem cases; some slicer
+  combinations leave very few rows, and rates move quickly.
+- **Class imbalance.** Only 16% of loans are not fully paid. Accuracy is a
+  misleading headline metric, which is why the model tab reports recall, F1
+  and PR-AUC next to it.
+- **Prediction is not a decision.** The probability is a relative risk score.
+  A single score should never be the sole basis for approving or rejecting an
+  application.
+- **Historical data.** The book is a fixed historical extract, not a live
+  lending portfolio.

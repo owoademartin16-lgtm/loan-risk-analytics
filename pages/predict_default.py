@@ -1,141 +1,195 @@
-"""Predict Default page — score a single loan application with the model.
+"""Predict Default page — score a loan with the report's best model.
 
-The form is built from ``model/features.joblib`` (the exact columns the
-model was trained on).  The most influential features are asked for; the
-remaining ones are filled with the median (numeric) or the mode
-(categorical) taken from the data, exactly as the specification requires.
+The form is built from the 13 features the tuned XGBoost pipeline was trained
+on in ``Loan Repayment Risk Analysis Report.ipynb`` (cell 25).  Income is
+entered in dollars and log-transformed, because the model consumes
+``log.annual.inc``.
 """
 
 from __future__ import annotations
 
 import math
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
+import loan_report
 import utils
 
 utils.inject_styles()
 
-# ---------------------------------------------------------------------------
-# Human readable labels / input configuration per feature
-# ---------------------------------------------------------------------------
-FEATURE_LABELS = {
-    "loan_amnt": "Loan amount ($)",
-    "fico_n": "FICO score",
-    "dti_n": "Debt-to-income ratio (%)",
-    "emp_length": "Employment length",
-    "purpose": "Loan purpose",
-    "home_ownership_n": "Home ownership",
-    "addr_state": "State",
-}
-
-INPUT_STEPS = {"loan_amnt": 250.0, "fico_n": 1.0, "dti_n": 1.0}
-
-# A feature has to explain at least this share of the model's total
-# importance before it is worth asking the user about it.
-IMPORTANCE_THRESHOLD = 0.05
-
-
-# ---------------------------------------------------------------------------
-# Page header
-# ---------------------------------------------------------------------------
 st.title("Predict Default")
 utils.page_subtitle(
     "<b>Score a hypothetical loan application</b> with the best model from the "
-    "notebook — the Random Forest with the highest F1-score — and get a clear "
-    "risk assessment."
+    "report — the tuned XGBoost — and get a clear repayment-risk assessment."
 )
 
 try:
-    loans = utils.load_data()
-    model = utils.load_model()
-    features = utils.load_features()
+    loans = loan_report.load_data()
+    model = loan_report.load_model()
 except Exception as exc:  # noqa: BLE001 - surfaced to the user
     st.error(f"Could not load the model assets: {exc}")
     st.stop()
 
-missing = [feature for feature in features if feature not in loans.columns]
-if missing:
-    st.error(
-        f"The data file does not contain the model input column(s) {missing}. "
-        "The model and the data are out of sync."
-    )
-    st.stop()
-
-# The model card: which model was selected and the notebook scores behind it.
-model_col, f1_col, auc_col = st.columns(3)
-model_col.metric("Selected model", "Random Forest")
-f1_col.metric("F1-score · test", "0.3889")
-auc_col.metric("ROC-AUC · test", "0.6505")
+# Model card: the notebook's tuned scores.
+auc_col, recall_col, pr_col = st.columns(3)
+auc_col.metric("Selected model", "Tuned XGBoost")
+recall_col.metric("ROC-AUC · test", "0.667")
+pr_col.metric("PR-AUC · test", "0.285")
 st.caption(
-    "Best F1-score and recall (0.6036) of the three models compared in the "
-    "notebook. The probability is a relative risk score, not a book-wide "
-    "default rate."
+    "Best recall (0.567) and F1 (0.337) of the three models compared in the "
+    "report. The probability is a relative risk score, not a book-wide "
+    "non-repayment rate."
 )
 
-# The importance of each input only depends on the model, so it is computed
-# once per session instead of on every rerun.
-if "feature_importance" not in st.session_state:
-    st.session_state["feature_importance"] = utils.raw_feature_importance(model)
+# ---------------------------------------------------------------------------
+# Defaults and limits from the training data
+# ---------------------------------------------------------------------------
+defaults = {c: loans[c].median() for c in loan_report.NUMERIC_FEATURES}
+defaults["purpose"] = loans["purpose"].mode().iloc[0]
 
-importance = st.session_state["feature_importance"]
-share = importance["importance"] / importance["importance"].sum()
-asked = list(importance.loc[share >= IMPORTANCE_THRESHOLD, "feature"])
-asked = [feature for feature in features if feature in asked]
 
-defaults = utils.column_defaults(loans)
+def limits(column: str) -> tuple[float, float]:
+    return float(loans[column].min()), float(loans[column].max())
+
+
+def median(column: str) -> float:
+    return float(loans[column].median())
+
+
+annual_low, annual_high = (
+    float(np.exp(limits("log.annual.inc")[0])),
+    float(np.exp(limits("log.annual.inc")[1])),
+)
 
 # ---------------------------------------------------------------------------
-# Input form
+# Application form
 # ---------------------------------------------------------------------------
 st.subheader("Loan application")
 
 with st.container(border=True, key="card-form"):
-    with st.form("loan_application_form"):
-        values: dict[str, object] = {}
-        columns = st.columns(3)
+    with st.form("loan_repayment_form"):
+        left, middle, right = st.columns(3)
 
-        for position, feature in enumerate(asked):
-            with columns[position % len(columns)]:
-                label = FEATURE_LABELS.get(feature, feature.replace("_", " ").title())
-                series = loans[feature].dropna()
+        with left:
+            purpose = st.selectbox(
+                "Loan purpose",
+                sorted(loans["purpose"].dropna().unique().tolist()),
+                index=sorted(loans["purpose"].dropna().unique().tolist()).index(
+                    defaults["purpose"]
+                ),
+            )
+            credit_policy = st.selectbox("Credit policy met", ["Yes", "No"])
+            interest_pct = st.number_input(
+                "Interest rate (%)",
+                min_value=round((loans["int.rate"].min()) * 100, 1),
+                max_value=round((loans["int.rate"].max()) * 100, 1),
+                value=round(float(defaults["int.rate"]) * 100, 2),
+                step=0.1,
+                format="%.2f",
+            )
+            installment = st.number_input(
+                "Monthly installment ($)",
+                min_value=math.floor(limits("installment")[0]),
+                max_value=math.ceil(limits("installment")[1]),
+                value=int(round(defaults["installment"])),
+                step=10,
+            )
+            annual_income = st.number_input(
+                "Annual income ($)",
+                min_value=int(round(annual_low)),
+                max_value=int(round(annual_high)),
+                value=int(round(np.exp(defaults["log.annual.inc"]))),
+                step=1000,
+            )
 
-                if pd.api.types.is_numeric_dtype(series):
-                    low, high = utils.column_limits(loans, feature)
-                    step = INPUT_STEPS.get(feature, max(1.0, (high - low) / 100.0))
-                    if step >= 1:
-                        low, high = float(math.floor(low)), float(math.ceil(high))
-                    values[feature] = st.number_input(
-                        label,
-                        min_value=float(low),
-                        max_value=float(high),
-                        value=float(defaults[feature]),
-                        step=float(step),
-                        format="%.2f" if feature == "dti_n" else "%.0f",
-                    )
-                else:
-                    options = utils.column_options(loans, feature)
-                    default_value = defaults[feature]
-                    index = options.index(default_value) if default_value in options else 0
-                    values[feature] = st.selectbox(label, options, index=index)
+        with middle:
+            fico = st.number_input(
+                "FICO score",
+                min_value=math.floor(limits("fico")[0]),
+                max_value=math.ceil(limits("fico")[1]),
+                value=int(round(defaults["fico"])),
+                step=1,
+            )
+            dti = st.number_input(
+                "Debt-to-income ratio",
+                min_value=math.floor(limits("dti")[0]),
+                max_value=math.ceil(limits("dti")[1]),
+                value=int(round(defaults["dti"])),
+                step=1,
+            )
+            days_credit = st.number_input(
+                "Days with credit line",
+                min_value=math.floor(limits("days.with.cr.line")[0]),
+                max_value=math.ceil(limits("days.with.cr.line")[1]),
+                value=int(round(defaults["days.with.cr.line"])),
+                step=100,
+            )
 
-        submitted = st.form_submit_button("Predict default risk", type="primary")
+        with right:
+            revol_bal = st.number_input(
+                "Revolving balance ($)",
+                min_value=math.floor(limits("revol.bal")[0]),
+                max_value=math.ceil(limits("revol.bal")[1]),
+                value=int(round(defaults["revol.bal"])),
+                step=1000,
+            )
+            revol_util = st.number_input(
+                "Revolving line utilisation (%)",
+                min_value=0.0,
+                max_value=float(math.ceil(limits("revol.util")[1])),
+                value=float(round(defaults["revol.util"], 1)),
+                step=1.0,
+            )
+            inquiries = st.number_input(
+                "Credit inquiries · last 6 months",
+                min_value=0,
+                max_value=math.ceil(limits("inq.last.6mths")[1]),
+                value=int(round(defaults["inq.last.6mths"])),
+                step=1,
+            )
+            delinquencies = st.number_input(
+                "Delinquencies · previous 2 years",
+                min_value=0,
+                max_value=math.ceil(limits("delinq.2yrs")[1]),
+                value=int(round(defaults["delinq.2yrs"])),
+                step=1,
+            )
+            public_records = st.number_input(
+                "Public records",
+                min_value=0,
+                max_value=math.ceil(limits("pub.rec")[1]),
+                value=int(round(defaults["pub.rec"])),
+                step=1,
+            )
+
+        submitted = st.form_submit_button("Predict repayment risk", type="primary")
 
 # ---------------------------------------------------------------------------
 # Prediction
 # ---------------------------------------------------------------------------
 if submitted:
-    row_values: dict[str, object] = {}
-    for feature in features:
-        row_values[feature] = values.get(feature, defaults.get(feature))
-
-    row = pd.DataFrame([row_values], columns=features)
-    for feature in features:
-        if pd.api.types.is_numeric_dtype(loans[feature]):
-            row[feature] = row[feature].astype(float)
-        else:
-            row[feature] = row[feature].astype(str)
+    row = pd.DataFrame(
+        [
+            {
+                "credit.policy": 1 if credit_policy == "Yes" else 0,
+                "purpose": purpose,
+                "int.rate": interest_pct / 100.0,
+                "installment": float(installment),
+                "log.annual.inc": float(np.log(annual_income)),
+                "dti": float(dti),
+                "fico": float(fico),
+                "days.with.cr.line": float(days_credit),
+                "revol.bal": float(revol_bal),
+                "revol.util": float(revol_util),
+                "inq.last.6mths": float(inquiries),
+                "delinq.2yrs": float(delinquencies),
+                "pub.rec": float(public_records),
+            }
+        ],
+        columns=loan_report.FEATURE_COLUMNS,
+    )
 
     try:
         probabilities = model.predict_proba(row)[0]
@@ -147,7 +201,9 @@ if submitted:
         probability = float(probabilities[index])
 
         st.divider()
-        st.markdown(
-            utils.risk_assessment_html(probability),
-            unsafe_allow_html=True,
+        st.markdown(utils.risk_assessment_html(probability), unsafe_allow_html=True)
+
+        st.caption(
+            "Top drivers in the report: credit policy (21.0%), interest rate "
+            "(11.9%), recent inquiries (7.4%) and FICO score (6.9%)."
         )

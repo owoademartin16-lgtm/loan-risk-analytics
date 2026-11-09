@@ -1,15 +1,16 @@
-"""Dashboard page — the notebook's figures, driven by the sidebar slicers.
+"""Dashboard page — the report's figures, driven by the sidebar slicers.
 
-Every chart here is rebuilt with the exact logic of ``Loan Risk Analytics.ipynb``:
-the same bins, band labels, ordering, bar colours, percentage labels and axis
-headroom.  The sidebar slicers live in ``app.py`` and keep their state while
-you move between pages.
+Every chart is rebuilt with the exact logic of
+``Loan Repayment Risk Analysis Report.ipynb``: the same bins and labels, the
+same bar colour per figure, the same titles, ordering, percentage labels and
+axis headroom.
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
+import loan_report
 import utils
 
 utils.inject_styles()
@@ -20,15 +21,15 @@ CHART_CONFIG = {"displayModeBar": False}
 # ---------------------------------------------------------------------------
 # Page header
 # ---------------------------------------------------------------------------
-st.title("Loan Default Dashboard")
+st.title("Loan Repayment Risk Dashboard")
 utils.page_subtitle(
-    "<b>Every figure is reproduced from the analysis notebook</b> — the same "
-    "bins, ordering, colours and labels — computed live on the LendingClub "
-    "book (2007&ndash;2018). Use the slicers in the sidebar to narrow the view."
+    "<b>Every figure is reproduced from the report notebook</b> — the same "
+    "bins, ordering, colours and labels — on 9,578 LendingClub loans. "
+    "Use the slicers in the sidebar to narrow the book."
 )
 
 try:
-    loans = utils.load_data()
+    loans = loan_report.load_data()
 except Exception as exc:  # noqa: BLE001 - surfaced to the user
     st.error(f"Could not load the loan data: {exc}")
     st.stop()
@@ -37,24 +38,26 @@ except Exception as exc:  # noqa: BLE001 - surfaced to the user
 # Slicers (state created in app.py)
 # ---------------------------------------------------------------------------
 purposes = st.session_state.get("filter_purposes") or []
-year_range = st.session_state.get("filter_years")
-amount_range = st.session_state.get("filter_amount")
 fico_range = st.session_state.get("filter_fico")
 dti_range = st.session_state.get("filter_dti")
-home = st.session_state.get("filter_home") or []
-emp = st.session_state.get("filter_emp") or []
-states = st.session_state.get("filter_states") or []
+rate_range = st.session_state.get("filter_rate")
+installment_range = st.session_state.get("filter_installment")
+inquiries = st.session_state.get("filter_inq") or []
+delinquencies = st.session_state.get("filter_delinq") or []
+public_records = st.session_state.get("filter_pubrec") or []
+credit_policy = st.session_state.get("filter_policy") or "All"
 
-filtered = utils.apply_filters(
+filtered = loan_report.apply_filters(
     loans,
     purposes=purposes,
-    year_range=year_range,
-    amount_range=amount_range,
     fico_range=fico_range,
     dti_range=dti_range,
-    home_ownership=home,
-    emp_length=emp,
-    states=states,
+    rate_range=rate_range,
+    installment_range=installment_range,
+    inquiries=inquiries,
+    delinquencies=delinquencies,
+    public_records=public_records,
+    credit_policy=credit_policy,
 )
 
 if filtered.empty:
@@ -67,31 +70,33 @@ if filtered.empty:
 # ---------------------------------------------------------------------------
 # KPI row
 # ---------------------------------------------------------------------------
-kpis = utils.portfolio_kpis(filtered)
+kpis = loan_report.portfolio_kpis(filtered)
 with st.container(key="kpi_row"):
-    col_loans, col_defaulted, col_rate, col_amount = st.columns(4)
+    col_loans, col_problems, col_rate, col_interest = st.columns(4)
     col_loans.metric("Total loans", f"{kpis['total_loans']:,}")
-    col_defaulted.metric("Defaulted loans", f"{kpis['defaulted_loans']:,}")
-    col_rate.metric("Overall default rate", f"{kpis['default_rate']:.2f}%")
-    col_amount.metric("Average loan amount", f"${kpis['avg_loan_amount']:,.0f}")
+    col_problems.metric("Not fully paid", f"{kpis['problem_loans']:,}")
+    col_rate.metric("Non-full repayment rate", f"{kpis['problem_rate']:.2f}%")
+    col_interest.metric("Average interest rate", f"{kpis['avg_interest']:.2f}%")
 
 active = []
 if purposes:
     active.append(f"{len(purposes)} purpose{'s' if len(purposes) > 1 else ''}")
-if year_range:
-    active.append(f"{year_range[0]}–{year_range[1]}")
-if amount_range:
-    active.append(f"${amount_range[0]:,}–${amount_range[1]:,}")
 if fico_range:
     active.append(f"FICO {fico_range[0]}–{fico_range[1]}")
 if dti_range:
     active.append(f"DTI {dti_range[0]}–{dti_range[1]}")
-if home:
-    active.append(f"{len(home)} home type{'s' if len(home) > 1 else ''}")
-if emp:
-    active.append(f"{len(emp)} employment length{'s' if len(emp) > 1 else ''}")
-if states:
-    active.append(f"{len(states)} state{'s' if len(states) > 1 else ''}")
+if rate_range:
+    active.append(f"rate {rate_range[0]:.1f}–{rate_range[1]:.1f}%")
+if installment_range:
+    active.append(f"installment ${installment_range[0]:,}–${installment_range[1]:,}")
+if inquiries:
+    active.append(f"{len(inquiries)} inquir{'y' if len(inquiries) == 1 else 'ies'}")
+if delinquencies:
+    active.append(f"{len(delinquencies)} delinquenc{'y' if len(delinquencies) == 1 else 'ies'}")
+if public_records:
+    active.append(f"{len(public_records)} public record group{'s' if len(public_records) > 1 else ''}")
+if credit_policy != "All":
+    active.append(f"credit policy {credit_policy.lower()}")
 
 st.caption(
     f"Showing {kpis['total_loans']:,} of {len(loans):,} loans"
@@ -101,166 +106,122 @@ st.caption(
 # ---------------------------------------------------------------------------
 # Figures
 # ---------------------------------------------------------------------------
-overview, profile, credit, geography, model_tab = st.tabs(
-    ["Overview", "Loan profile", "Credit score", "Purpose & geography", "Model"]
+overview, borrower, history, installments, model_tab = st.tabs(
+    ["Overview", "Borrower", "Credit history", "Installments", "Model"]
 )
 
 with overview:
     left, right = st.columns(2)
     with left:
-        with st.container(border=True, key="card-outcomes"):
+        with st.container(border=True, key="card-purpose"):
             st.plotly_chart(
-                utils.chart_notebook_outcomes(filtered),
+                loan_report.chart_purpose(filtered),
                 width="stretch",
                 config=CHART_CONFIG,
             )
     with right:
-        with st.container(border=True, key="card-year"):
+        with st.container(border=True, key="card-interest"):
             st.plotly_chart(
-                utils.chart_notebook_year(utils.notebook_year_summary(filtered)),
+                loan_report.chart_interest(filtered),
                 width="stretch",
                 config=CHART_CONFIG,
             )
 
-with profile:
-    top_left, top_right = st.columns(2)
-    with top_left:
-        with st.container(border=True, key="card-amount"):
-            st.plotly_chart(
-                utils.chart_notebook_vertical(
-                    utils.notebook_amount_summary(filtered),
-                    "Default Rate by Loan Amount",
-                    "Loan Amount Range",
-                ),
-                width="stretch",
-                config=CHART_CONFIG,
-            )
-    with top_right:
-        with st.container(border=True, key="card-dti"):
-            st.plotly_chart(
-                utils.chart_notebook_vertical(
-                    utils.notebook_dti_summary(filtered),
-                    "Default Rate by Debt-to-Income Ratio",
-                    "DTI Band",
-                    angle=0,
-                ),
-                width="stretch",
-                config=CHART_CONFIG,
-            )
-    with st.container(border=True, key="card-emplength"):
-        st.plotly_chart(
-            utils.chart_notebook_employment(utils.notebook_emp_summary(filtered)),
-            width="stretch",
-            config=CHART_CONFIG,
-        )
-        st.caption("NI = employment length not indicated, exactly as labelled in the notebook.")
-
-with credit:
+with borrower:
     left, right = st.columns(2)
     with left:
         with st.container(border=True, key="card-fico"):
             st.plotly_chart(
-                utils.chart_notebook_vertical(
-                    utils.notebook_fico_summary(filtered),
-                    "Default Rate by FICO Score Band",
-                    "FICO Score Band",
-                ),
+                loan_report.chart_fico(filtered),
                 width="stretch",
                 config=CHART_CONFIG,
             )
     with right:
-        with st.container(border=True, key="card-fico-groups"):
+        with st.container(border=True, key="card-dti"):
             st.plotly_chart(
-                utils.chart_notebook_fico_groups(
-                    utils.notebook_fico_group_summary(filtered)
-                ),
+                loan_report.chart_dti(filtered),
                 width="stretch",
                 config=CHART_CONFIG,
             )
 
-with geography:
+with history:
+    with st.container(border=True, key="card-inquiries"):
+        st.plotly_chart(
+            loan_report.chart_inquiries(filtered),
+            width="stretch",
+            config=CHART_CONFIG,
+        )
     left, right = st.columns(2)
     with left:
-        with st.container(border=True, key="card-purpose"):
+        with st.container(border=True, key="card-delinq"):
             st.plotly_chart(
-                utils.chart_notebook_horizontal(
-                    utils.notebook_purpose_summary(filtered),
-                    "Default Rate by Loan Purpose",
-                    "Loan Purpose",
-                ),
+                loan_report.chart_delinquencies(filtered),
                 width="stretch",
                 config=CHART_CONFIG,
             )
     with right:
-        with st.container(border=True, key="card-states"):
+        with st.container(border=True, key="card-pubrec"):
             st.plotly_chart(
-                utils.chart_notebook_horizontal(
-                    utils.notebook_state_summary(filtered),
-                    "10 States with the Highest Loan Default Rates",
-                    "State",
-                ),
+                loan_report.chart_public_records(filtered),
                 width="stretch",
                 config=CHART_CONFIG,
             )
+
+with installments:
+    with st.container(border=True, key="card-installments"):
+        st.plotly_chart(
+            loan_report.chart_installments(filtered),
+            width="stretch",
+            config=CHART_CONFIG,
+        )
+    st.caption(
+        "Ten equal-width bins over the monthly installment, exactly as "
+        "`pd.cut(df['installment'], bins=10)` in the notebook."
+    )
 
 with model_tab:
-    st.subheader("Model comparison · notebook test set")
-    comparison = utils.NOTEBOOK_MODEL_RESULTS.copy()
-    st.dataframe(
-        comparison.style.format("{:.4f}").highlight_max(
-            axis=0, color="#DCEFE6"
-        ),
-        width="stretch",
-    )
-    st.info(
-        "**Random Forest is the selected model.** It has the best F1-score "
-        "(0.3889) and recall (0.6036) of the three models, so it is the one "
-        "used on the **Predict Default** page. CatBoost reports the highest "
-        "accuracy and ROC-AUC, but at its default 0.5 threshold it flags only "
-        "0.26% of loans as defaults, which is why its F1 collapses to 0.0128."
-    )
-
-    chart_col, table_col = st.columns([1.45, 1])
-    with chart_col:
-        with st.container(border=True, key="card-thresholds"):
-            st.plotly_chart(
-                utils.chart_notebook_thresholds(),
-                width="stretch",
-                config=CHART_CONFIG,
-            )
-    with table_col:
-        st.markdown("**CatBoost threshold sweep · notebook cell 41**")
+    try:
+        evaluation = loan_report.evaluate_models()
+    except Exception as exc:  # noqa: BLE001
+        st.error(f"The model figures are unavailable: {exc}")
+    else:
+        st.subheader("Model comparison · notebook test set")
+        comparison = evaluation["comparison"].copy()
         st.dataframe(
-            utils.NOTEBOOK_THRESHOLD_RESULTS.style.format(
-                {"Threshold": "{:.2f}", "Accuracy": "{:.4f}",
-                 "Precision": "{:.4f}", "Recall": "{:.4f}",
-                 "F1_Score": "{:.4f}"}
+            comparison.style.format("{:.3f}").highlight_max(
+                axis=0, color="#DCEFE6"
             ),
-            hide_index=True,
             width="stretch",
         )
-        st.caption(
-            "The best F1-score is at a 0.20 threshold (0.3938) — 0.296 "
-            "precision against 0.592 recall."
+        st.info(
+            "**The tuned XGBoost is the selected model.** After "
+            "`RandomizedSearchCV` it has the best recall (0.567), F1 (0.337) "
+            "and PR-AUC (0.285) of the three models, so it is the model used "
+            "on the **Predict Default** page. The comparison table is "
+            "recomputed from the notebook's deterministic 80/20 split."
         )
 
-    if "feature_importance_chart" not in st.session_state:
-        try:
-            model = utils.load_model()
-            st.session_state["feature_importance_chart"] = (
-                utils.chart_notebook_importance(model)
-            )
-        except Exception as exc:  # noqa: BLE001
-            st.error(f"The feature-importance figure is unavailable: {exc}")
+        st.subheader("Confusion matrices")
+        matrix_tabs = st.tabs(list(evaluation["matrices"].keys()))
+        for tab, (name, matrix) in zip(matrix_tabs, evaluation["matrices"].items()):
+            with tab:
+                with st.container(border=True, key=f"card-confusion-{name}"):
+                    st.plotly_chart(
+                        loan_report.chart_confusion_matrix(
+                            matrix, f"{name} Confusion Matrix"
+                        ),
+                        width="stretch",
+                        config=CHART_CONFIG,
+                    )
 
-    if "feature_importance_chart" in st.session_state:
+        st.subheader("Top 15 features · tuned XGBoost")
         with st.container(border=True, key="card-importance"):
             st.plotly_chart(
-                st.session_state["feature_importance_chart"],
+                loan_report.chart_importance(evaluation["importance"]),
                 width="stretch",
                 config=CHART_CONFIG,
             )
         st.caption(
-            "FICO score (35.4%), debt-to-income (21.3%) and loan amount "
-            "(15.4%) carry 72% of the Random Forest's importance."
+            "Feature importance after dropping the notebook's "
+            "`numeric__` / `categorical__` prefixes — the same figure as cell 43."
         )

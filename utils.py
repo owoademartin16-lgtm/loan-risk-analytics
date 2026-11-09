@@ -231,9 +231,13 @@ STYLE_CSS = """
       [data-testid="stMetricLabel"] p {
         font-size: 0.7rem !important;
         font-weight: 700 !important;
-        letter-spacing: 0.1em !important;
+        letter-spacing: 0.08em !important;
         text-transform: uppercase;
         color: var(--ink) !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        line-height: 1.35;
       }
       div[data-testid="stMetricValue"] {
         color: #000000 !important;
@@ -263,7 +267,10 @@ STYLE_CSS = """
          numbers always have room. */
       @media (max-width: 1279px) {
         .st-key-kpi_row [data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
-        .st-key-kpi_row [data-testid="stColumn"] { flex: 1 1 50%; }
+        .st-key-kpi_row [data-testid="stColumn"] {
+          flex: 1 1 calc(50% - 0.6rem);
+          min-width: calc(50% - 0.6rem);
+        }
       }
       @media (max-width: 620px) {
         .st-key-kpi_row [data-testid="stColumn"] { flex: 1 1 100%; }
