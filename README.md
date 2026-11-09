@@ -130,8 +130,11 @@ neutral sidebar rail (`#E7EBEA`), quiet white stat cards with a hairline
 border (`#E2E5E9`) and one colour rule per KPI. Typography is **Inter**.
 
 The figures keep the report's own palette rather than the app accent colour,
-so each bar looks exactly as it does in the notebook. The prediction risk card
-keeps green `#0F7A52` / amber `#F59E0B` / red `#C0392B` for low / medium / high.
+so each bar looks exactly as it does in the notebook. The bars themselves use
+a Tableau-style treatment: left-aligned titles, slim rounded bars, quiet zero
+baselines, grey axis labels and no grid lines or tick marks. The prediction
+risk card keeps green `#0F7A52` / amber `#F59E0B` / red `#C0392B` for low /
+medium / high.
 
 ## Analytical limitations
 

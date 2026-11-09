@@ -259,7 +259,18 @@ def _rate_label() -> str:
 def _finish(fig: go.Figure, title: str, x_title: str, y_title: str,
             *, tickangle: int = 0) -> go.Figure:
     fig.update_layout(
-        title=title,
+        title=dict(
+            text=title,
+            x=0,
+            xanchor="left",
+            xref="paper",
+            font=dict(
+                family="Inter, Helvetica Neue, sans-serif",
+                size=17,
+                color="#1F2A37",
+            ),
+            pad=dict(l=2, t=2),
+        ),
         xaxis_title=x_title,
         yaxis_title=y_title,
         template="plotly_white",
@@ -268,10 +279,37 @@ def _finish(fig: go.Figure, title: str, x_title: str, y_title: str,
         font=dict(family="Inter, Helvetica Neue, sans-serif", size=12, color="#2A2F36"),
         xaxis_tickangle=tickangle,
         showlegend=False,
-        bargap=0.25,
+        bargap=0.4,
+        barcornerradius=3,
+        hoverlabel=dict(
+            bgcolor="#FFFFFF",
+            bordercolor="#D6DBE1",
+            font=dict(
+                family="Inter, Helvetica Neue, sans-serif",
+                size=12,
+                color="#1F2A37",
+            ),
+        ),
     )
-    fig.update_xaxes(showgrid=False, linecolor="#DCE1E7", zeroline=False)
-    fig.update_yaxes(showgrid=False, linecolor="#DCE1E7", zeroline=False)
+    # Tableau-style axes: labels and titles only, no grid lines, no tick marks
+    # and a single quiet baseline at zero.
+    axis_style = dict(
+        showgrid=False,
+        showline=False,
+        ticks="",
+        zeroline=True,
+        zerolinecolor="#DDE2E8",
+        zerolinewidth=1,
+        automargin=True,
+        tickfont=dict(
+            family="Inter, Helvetica Neue, sans-serif", size=11, color="#5F6B7A"
+        ),
+        title_font=dict(
+            family="Inter, Helvetica Neue, sans-serif", size=12, color="#5F6B7A"
+        ),
+    )
+    fig.update_xaxes(**axis_style)
+    fig.update_yaxes(**axis_style)
     return fig
 
 
@@ -295,7 +333,12 @@ def chart_vertical(data: pd.DataFrame, x_col: str, title: str, x_title: str,
     fig.update_traces(
         texttemplate="%{text:.1f}%",
         textposition="outside",
+        textfont=dict(
+            family="Inter, Helvetica Neue, sans-serif", size=11, color="#3F4A56"
+        ),
         marker_color=colour,
+        marker_line_width=0,
+        opacity=0.95,
         cliponaxis=False,
         hovertemplate=(
             f"{x_title}: %{{x}}<br>"
@@ -323,7 +366,12 @@ def chart_horizontal(data: pd.DataFrame, title: str, y_title: str,
     fig.update_traces(
         texttemplate="%{text:.1f}%",
         textposition="outside",
+        textfont=dict(
+            family="Inter, Helvetica Neue, sans-serif", size=11, color="#3F4A56"
+        ),
         marker_color=colour,
+        marker_line_width=0,
+        opacity=0.95,
         cliponaxis=False,
         hovertemplate=(
             f"{y_title}: %{{y}}<br>"
@@ -333,7 +381,7 @@ def chart_horizontal(data: pd.DataFrame, title: str, y_title: str,
     )
     fig.update_xaxes(range=[0, _max_rate(data)])
     fig = _finish(fig, title, _rate_label(), y_title)
-    fig.update_layout(margin=dict(l=150, r=40, t=64, b=64))
+    fig.update_layout(margin=dict(l=110, r=40, t=64, b=64))
     return fig
 
 
