@@ -738,10 +738,18 @@ def apply_filters(
     df: pd.DataFrame,
     purposes: list[str] | None = None,
     year_range: tuple[int, int] | None = None,
+    amount_range: tuple[float, float] | None = None,
+    fico_range: tuple[float, float] | None = None,
+    dti_range: tuple[float, float] | None = None,
+    home_ownership: list[str] | None = None,
+    emp_length: list[str] | None = None,
+    states: list[str] | None = None,
 ) -> pd.DataFrame:
-    """Return the rows matching the active sidebar filters.
+    """Return the rows matching the active slicers.
 
-    An empty purpose selection means "all purposes".
+    An empty list means "all values" for that field, and ``None`` means the
+    slicer is not restricting the data at all.  Every slicer is combined with
+    ``AND``, exactly like a Power BI / Excel report.
     """
     mask = pd.Series(True, index=df.index)
 
@@ -752,6 +760,28 @@ def apply_filters(
         start, end = year_range
         years = pd.to_numeric(df["issue_year"], errors="coerce")
         mask &= years.between(start, end)
+
+    for column, bounds in (
+        ("loan_amnt", amount_range),
+        ("fico_n", fico_range),
+        ("dti_n", dti_range),
+    ):
+        if bounds is not None:
+            low, high = bounds
+            values = pd.to_numeric(df[column], errors="coerce")
+            mask &= values.between(low, high)
+
+    if home_ownership:
+        mask &= df["home_ownership_n"].isin(home_ownership)
+
+    if emp_length:
+        labels = df["emp_length"].astype(str).replace(
+            {EMP_LENGTH_RAW_MISSING: EMP_LENGTH_MISSING_LABEL}
+        )
+        mask &= labels.isin(emp_length)
+
+    if states:
+        mask &= df["addr_state"].isin(states)
 
     return df[mask]
 
@@ -1040,6 +1070,473 @@ def chart_year_trend(summary: pd.DataFrame) -> go.Figure:
     top = float(np.nanmax(summary["default_rate"])) if len(summary) else 1.0
     fig.update_yaxes(range=[0, max(top * 1.2, 1.0)])
     return _finish(fig, height=380)
+
+
+# ---------------------------------------------------------------------------
+# Notebook-faithful figures
+# ---------------------------------------------------------------------------
+# The analysis notebook (``Loan Risk Analytics.ipynb``) draws its figures with
+# Plotly Express and a single bar colour, ``#2E86AB``.  The functions below
+# rebuild every notebook figure from the cleaned data using the exact same
+# bins, ordering, colourway, labels and axis rules as the notebook cells, so
+# the dashboard can never drift from the analysis.
+NB_BLUE = "#2E86AB"        # every default-rate bar in the notebook
+NB_ORANGE = "#E4572E"      # "Defaulted" in the outcome chart
+NB_EMP_BLUE = "#1f77b4"    # employment-length bars in the notebook
+NB_FICO_GROUP_BLUE = "#2E86AB"
+
+NB_AMOUNT_BINS = [0, 5_000, 10_000, 15_000, 20_000, 25_000, 30_000, np.inf]
+NB_AMOUNT_LABELS = [
+    "$0–5k", "$5k–10k", "$10k–15k",
+    "$15k–20k", "$20k–25k", "$25k–30k", "$30k+",
+]
+
+NB_FICO_BINS = [0, 580, 620, 660, 700, 740, 850]
+NB_FICO_LABELS = [
+    "Below 580", "580–619", "620–659",
+    "660–699", "700–739", "740+",
+]
+
+NB_FICO_GROUP_BINS = [600, 650, 700, 750, 800, 850]
+NB_FICO_GROUP_LABELS = ["600–649", "650–699", "700–749", "750–799", "800–849"]
+
+NB_DTI_BINS = [0, 10, 20, 30, 40, 50, np.inf]
+NB_DTI_LABELS = ["0–10", "10–20", "20–30", "30–40", "40–50", "50+"]
+
+NB_STATE_NAMES = {
+    "MS": "Mississippi", "NE": "Nebraska", "AR": "Arkansas",
+    "AL": "Alabama", "OK": "Oklahoma", "LA": "Louisiana",
+    "NY": "New York", "NV": "Nevada", "FL": "Florida", "IN": "Indiana",
+}
+
+
+def notebook_outcomes(df: pd.DataFrame) -> pd.DataFrame:
+    """Cell 15: loan counts by outcome, in notebook order."""
+    labels = df["Default"].map({0: PAID_LABEL, 1: DEFAULT_LABEL})
+    counts = labels.value_counts().reindex([PAID_LABEL, DEFAULT_LABEL]).fillna(0)
+    return counts.rename_axis("Loan Outcome").reset_index(name="Number of Loans")
+
+
+def notebook_band_summary(
+    df: pd.DataFrame,
+    column: str,
+    bins: list,
+    labels: list[str],
+) -> pd.DataFrame:
+    """Group a numeric column into the notebook's bands and rate each band."""
+    banded = pd.cut(df[column], bins=bins, labels=labels, include_lowest=True)
+    grouped = (
+        df.groupby(banded, observed=False)
+        .agg(total_loans=("Default", "size"), defaulted=("Default", "sum"))
+        .reset_index()
+        .rename(columns={column: "band"})
+    )
+    grouped["default_rate"] = np.where(
+        grouped["total_loans"] > 0,
+        grouped["defaulted"] / grouped["total_loans"] * 100.0,
+        np.nan,
+    )
+    grouped["band"] = grouped["band"].astype(str)
+    ordered = grouped.set_index("band").reindex(labels).reset_index()
+    ordered["total_loans"] = ordered["total_loans"].fillna(0).astype(int)
+    ordered["defaulted"] = ordered["defaulted"].fillna(0).astype(int)
+    return ordered.dropna(subset=["default_rate"]).reset_index(drop=True)
+
+
+def notebook_amount_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Cell 16: default rate by loan-amount band."""
+    return notebook_band_summary(
+        df, "loan_amnt", NB_AMOUNT_BINS, NB_AMOUNT_LABELS
+    )
+
+
+def notebook_fico_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Cell 17: default rate by FICO band."""
+    return notebook_band_summary(df, "fico_n", NB_FICO_BINS, NB_FICO_LABELS)
+
+
+def notebook_dti_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Cell 19: default rate by debt-to-income band."""
+    return notebook_band_summary(df, "dti_n", NB_DTI_BINS, NB_DTI_LABELS)
+
+
+def notebook_fico_group_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Cell 26: default rate by the notebook's five credit-score groups."""
+    banded = pd.cut(
+        df["fico_n"],
+        bins=NB_FICO_GROUP_BINS,
+        labels=NB_FICO_GROUP_LABELS,
+        right=False,
+    )
+    grouped = (
+        df.groupby(banded, observed=False)
+        .agg(total_loans=("Default", "size"), defaulted=("Default", "sum"))
+        .reset_index()
+        .rename(columns={"fico_n": "band"})
+    )
+    grouped["default_rate"] = np.where(
+        grouped["total_loans"] > 0,
+        grouped["defaulted"] / grouped["total_loans"] * 100.0,
+        np.nan,
+    )
+    grouped["band"] = grouped["band"].astype(str)
+    ordered = grouped.set_index("band").reindex(NB_FICO_GROUP_LABELS).reset_index()
+    ordered["total_loans"] = ordered["total_loans"].fillna(0).astype(int)
+    ordered["defaulted"] = ordered["defaulted"].fillna(0).astype(int)
+    return ordered.dropna(subset=["default_rate"]).reset_index(drop=True)
+
+
+def notebook_purpose_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Cell 18: purposes with at least 100 loans, highest rate first."""
+    grouped = (
+        df.groupby("purpose")
+        .agg(total_loans=("Default", "size"), defaulted=("Default", "sum"))
+        .reset_index()
+    )
+    grouped["default_rate"] = grouped["defaulted"] / grouped["total_loans"] * 100.0
+    ranked = grouped[grouped["total_loans"] >= 100].sort_values(
+        "default_rate", ascending=False
+    )
+    return ranked.rename(columns={"purpose": "label"}).reset_index(drop=True)
+
+
+def notebook_state_summary(df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
+    """Cell 20: the ten states with the highest default rate (full names)."""
+    grouped = (
+        df.groupby("addr_state")
+        .agg(total_loans=("Default", "size"), defaulted=("Default", "sum"))
+        .reset_index()
+    )
+    grouped["default_rate"] = grouped["defaulted"] / grouped["total_loans"] * 100.0
+    ranked = grouped[grouped["total_loans"] >= 100].sort_values(
+        "default_rate", ascending=False
+    ).head(top_n)
+    ranked["label"] = ranked["addr_state"].map(
+        lambda s: NB_STATE_NAMES.get(s, s)
+    )
+    return ranked[["label", "total_loans", "defaulted", "default_rate"]].reset_index(drop=True)
+
+
+def notebook_year_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Cell 21: default rate by loan issue year."""
+    grouped = (
+        df.dropna(subset=["issue_year"])
+        .groupby("issue_year")
+        .agg(total_loans=("Default", "size"), defaulted=("Default", "sum"))
+        .reset_index()
+    )
+    grouped["issue_year"] = grouped["issue_year"].astype(int)
+    grouped["default_rate"] = grouped["defaulted"] / grouped["total_loans"] * 100.0
+    return grouped
+
+
+def notebook_emp_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Cell 22: default rate by employment length, sorted by rate (notebook)."""
+    grouped = (
+        df.assign(emp_label=df["emp_length"].astype(str))
+        .groupby("emp_label")
+        .agg(total_loans=("Default", "size"), defaulted=("Default", "sum"))
+        .reset_index()
+    )
+    grouped["default_rate"] = grouped["defaulted"] / grouped["total_loans"] * 100.0
+    return grouped.sort_values("default_rate", ascending=False).rename(
+        columns={"emp_label": "label"}
+    ).reset_index(drop=True)
+
+
+def _nb_base(fig: go.Figure, height: int) -> go.Figure:
+    """The shared white canvas used by every notebook-style figure."""
+    fig.update_layout(
+        template="plotly_white",
+        height=height,
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#FFFFFF",
+        font=dict(family="Inter, Helvetica Neue, sans-serif", size=12, color="#2A2F36"),
+        margin=dict(l=66, r=34, t=64, b=62),
+        showlegend=False,
+        bargap=0.25,
+    )
+    fig.update_xaxes(showgrid=False, linecolor="#DCE1E7", zeroline=False)
+    fig.update_yaxes(gridcolor="#EDF1F5", linecolor="#DCE1E7", zeroline=False)
+    return fig
+
+
+def _nb_rate_hover(name: str) -> str:
+    return (
+        f"{name}: %{{x}}<br>"
+        "Default rate: %{y:.2f}%<br>"
+        "Total loans: %{customdata[0]:,}<br>"
+        "Defaulted: %{customdata[1]:,}<extra></extra>"
+    )
+
+
+def chart_notebook_outcomes(df: pd.DataFrame) -> go.Figure:
+    """Cell 15: distribution of loan outcomes."""
+    data = notebook_outcomes(df)
+    fig = px.bar(
+        data,
+        x="Loan Outcome",
+        y="Number of Loans",
+        text="Number of Loans",
+        color="Loan Outcome",
+        color_discrete_map={PAID_LABEL: NB_BLUE, DEFAULT_LABEL: NB_ORANGE},
+        title="Distribution of Loan Outcomes",
+    )
+    fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside")
+    fig.update_layout(
+        yaxis_title="Number of Loans",
+        xaxis_title="Loan Outcome",
+        uniformtext_minsize=10,
+    )
+    top = max(float(data["Number of Loans"].max()), 1.0)
+    fig.update_yaxes(range=[0, top * 1.15])
+    return _nb_base(fig, 420)
+
+
+def chart_notebook_vertical(summary: pd.DataFrame, title: str, x_title: str,
+                            *, angle: int = -35, color: str = NB_BLUE) -> go.Figure:
+    """A vertical notebook bar chart: blue bars, outside percentage labels."""
+    data = summary.copy()
+    fig = px.bar(
+        data,
+        x="band" if "band" in data.columns else "label",
+        y="default_rate",
+        text="default_rate",
+        custom_data=["total_loans", "defaulted"],
+        title=title,
+        labels={"default_rate": "Default Rate (%)"},
+    )
+    fig.update_traces(
+        texttemplate="%{text:.1f}%",
+        textposition="outside",
+        marker_color=color,
+        cliponaxis=False,
+        hovertemplate=_nb_rate_hover("Band"),
+    )
+    top = float(np.nanmax(data["default_rate"])) if len(data) else 1.0
+    fig.update_layout(
+        xaxis_title=x_title,
+        yaxis_title="Default Rate (%)",
+        xaxis_tickangle=angle,
+    )
+    fig.update_yaxes(range=[0, max(top * 1.15, 1.0)])
+    return _nb_base(fig, 440)
+
+
+def chart_notebook_horizontal(summary: pd.DataFrame, title: str,
+                              y_title: str) -> go.Figure:
+    """A horizontal notebook bar chart (purpose, state)."""
+    data = summary.copy()
+    fig = px.bar(
+        data,
+        x="default_rate",
+        y="label",
+        orientation="h",
+        text="default_rate",
+        custom_data=["total_loans", "defaulted"],
+        title=title,
+        labels={"default_rate": "Default Rate (%)", "label": y_title},
+    )
+    fig.update_traces(
+        texttemplate="%{text:.1f}%",
+        textposition="outside",
+        marker_color=NB_BLUE,
+        cliponaxis=False,
+        hovertemplate=(
+            f"{y_title}: %{{y}}<br>"
+            "Default rate: %{x:.2f}%<br>"
+            "Total loans: %{customdata[0]:,}<br>"
+            "Defaulted: %{customdata[1]:,}<extra></extra>"
+        ),
+    )
+    top = float(np.nanmax(data["default_rate"])) if len(data) else 1.0
+    fig.update_layout(
+        xaxis_title="Default Rate (%)",
+        yaxis_title=y_title,
+        yaxis_autorange="reversed",
+    )
+    fig.update_xaxes(range=[0, max(top * 1.15, 1.0)])
+    height = 660 if len(data) > 8 else 460
+    return _nb_base(fig, height)
+
+
+def chart_notebook_year(summary: pd.DataFrame) -> go.Figure:
+    """Cell 21: the default-rate trend line."""
+    data = summary.copy()
+    data["issue_year"] = data["issue_year"].astype(int)
+    fig = px.line(
+        data,
+        x="issue_year",
+        y="default_rate",
+        markers=True,
+        text="default_rate",
+        custom_data=["total_loans", "defaulted"],
+        title="Loan Default Rate by Issue Year",
+        labels={"default_rate": "Default Rate (%)", "issue_year": "Loan Issue Year"},
+    )
+    fig.update_traces(
+        texttemplate="%{text:.1f}%",
+        textposition="top center",
+        line_color=NB_BLUE,
+        marker=dict(size=8, color=NB_BLUE),
+        hovertemplate=(
+            "Issue year: %{x}<br>"
+            "Default rate: %{y:.2f}%<br>"
+            "Total loans: %{customdata[0]:,}<br>"
+            "Defaulted: %{customdata[1]:,}<extra></extra>"
+        ),
+    )
+    top = float(np.nanmax(data["default_rate"])) if len(data) else 1.0
+    fig.update_layout(
+        xaxis_title="Loan Issue Year",
+        yaxis_title="Default Rate (%)",
+        xaxis=dict(dtick=1),
+    )
+    fig.update_yaxes(range=[0, max(top * 1.2, 1.0)])
+    return _nb_base(fig, 440)
+
+
+def chart_notebook_employment(summary: pd.DataFrame) -> go.Figure:
+    """Cell 22: employment-length bars, sorted by rate exactly as the notebook."""
+    data = summary.copy()
+    fig = px.bar(
+        data,
+        x="label",
+        y="default_rate",
+        text="default_rate",
+        custom_data=["total_loans", "defaulted"],
+        title="Loan Default Rate by Employment Length",
+        labels={"default_rate": "Default Rate (%)", "label": "Employment Length"},
+    )
+    fig.update_traces(
+        texttemplate="%{text:.1f}%",
+        textposition="outside",
+        marker_color=NB_EMP_BLUE,
+        cliponaxis=False,
+        hovertemplate=_nb_rate_hover("Employment length"),
+    )
+    top = float(np.nanmax(data["default_rate"])) if len(data) else 1.0
+    fig.update_layout(
+        xaxis_title="Employment Length",
+        yaxis_title="Default Rate (%)",
+        xaxis_tickangle=-45,
+    )
+    fig.update_yaxes(range=[0, max(top * 1.15, 1.0)])
+    return _nb_base(fig, 460)
+
+
+def chart_notebook_fico_groups(summary: pd.DataFrame) -> go.Figure:
+    """Cell 26: default rate by credit-score group."""
+    return chart_notebook_vertical(
+        summary,
+        "Loan Default Rate by Credit Score",
+        "Credit Score Group",
+        color=NB_FICO_GROUP_BLUE,
+    )
+
+
+# --- model figures (recorded notebook outputs) -----------------------------
+# Cells 34 & 38 of the notebook.  The notebook is the source of truth: these
+# numbers are the printed test-set scores, not a re-run.
+NOTEBOOK_MODEL_RESULTS = pd.DataFrame(
+    [
+        {"Model": "Decision Tree", "Accuracy": 0.6004, "Precision": 0.2804,
+         "Recall": 0.6002, "F1-Score": 0.3822, "ROC-AUC": 0.6401},
+        {"Model": "Random Forest", "Accuracy": 0.6092, "Precision": 0.2868,
+         "Recall": 0.6036, "F1-Score": 0.3889, "ROC-AUC": 0.6505},
+        {"Model": "CatBoost", "Accuracy": 0.7941, "Precision": 0.5203,
+         "Recall": 0.0065, "F1-Score": 0.0128, "ROC-AUC": 0.6593},
+    ]
+).set_index("Model")
+
+# Cell 41: CatBoost threshold sweep.
+NOTEBOOK_THRESHOLD_RESULTS = pd.DataFrame(
+    [
+        {"Threshold": 0.50, "Accuracy": 0.7941, "Precision": 0.5203, "Recall": 0.0065, "F1_Score": 0.0128},
+        {"Threshold": 0.40, "Accuracy": 0.7921, "Precision": 0.4613, "Recall": 0.0559, "F1_Score": 0.0996},
+        {"Threshold": 0.30, "Accuracy": 0.7637, "Precision": 0.3794, "Recall": 0.2316, "F1_Score": 0.2876},
+        {"Threshold": 0.25, "Accuracy": 0.7166, "Precision": 0.3374, "Recall": 0.3899, "F1_Score": 0.3618},
+        {"Threshold": 0.20, "Accuracy": 0.6248, "Precision": 0.2951, "Recall": 0.5917, "F1_Score": 0.3938},
+        {"Threshold": 0.15, "Accuracy": 0.4843, "Precision": 0.2578, "Recall": 0.8002, "F1_Score": 0.3899},
+        {"Threshold": 0.10, "Accuracy": 0.3317, "Precision": 0.2283, "Recall": 0.9430, "F1_Score": 0.3676},
+    ]
+)
+
+
+def chart_notebook_thresholds() -> go.Figure:
+    """Cell 42: precision / recall / F1 against the probability threshold."""
+    data = NOTEBOOK_THRESHOLD_RESULTS
+    fig = go.Figure()
+    for column, colour in (
+        ("Precision", "#1f77b4"),
+        ("Recall", "#ff7f0e"),
+        ("F1_Score", "#2ca02c"),
+    ):
+        fig.add_trace(
+            go.Scatter(
+                x=data["Threshold"],
+                y=data[column],
+                mode="lines+markers",
+                name=column.replace("_", "-"),
+                line=dict(color=colour, width=2),
+                marker=dict(size=7, color=colour),
+            )
+        )
+    fig.update_layout(
+        title="CatBoost Performance at Different Thresholds",
+        xaxis_title="Probability Threshold",
+        yaxis_title="Score",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        showlegend=True,
+        template="plotly_white",
+        height=440,
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#FFFFFF",
+        font=dict(family="Inter, Helvetica Neue, sans-serif", size=12, color="#2A2F36"),
+        margin=dict(l=66, r=34, t=70, b=62),
+    )
+    fig.update_yaxes(gridcolor="#EDF1F5", zeroline=False)
+    fig.update_xaxes(showgrid=False, zeroline=False)
+    return fig
+
+
+def notebook_feature_importance(model, top_n: int = 20) -> pd.DataFrame:
+    """Cell 45/46: the encoded Random Forest importances, top 20."""
+    fitted = model.named_steps["preprocessor"]
+    forest = model.named_steps["model"]
+    names = fitted.get_feature_names_out()
+    importance = pd.DataFrame(
+        {"Feature": names, "Importance": forest.feature_importances_}
+    ).sort_values("Importance", ascending=False)
+    return importance.head(top_n)
+
+
+def chart_notebook_importance(model) -> go.Figure:
+    """Cell 46: top-20 Random Forest features, horizontal, notebook order."""
+    data = notebook_feature_importance(model).sort_values("Importance")
+    fig = go.Figure(
+        go.Bar(
+            x=data["Importance"],
+            y=data["Feature"],
+            orientation="h",
+            marker_color="#1f77b4",
+            hovertemplate="%{y}<br>Importance: %{x:.4f}<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        title="Top 20 Random Forest Features for Loan Default Prediction",
+        xaxis_title="Feature Importance",
+        yaxis_title="Feature",
+        template="plotly_white",
+        height=660,
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#FFFFFF",
+        font=dict(family="Inter, Helvetica Neue, sans-serif", size=12, color="#2A2F36"),
+        margin=dict(l=240, r=34, t=64, b=62),
+    )
+    fig.update_xaxes(gridcolor="#EDF1F5", zeroline=False)
+    fig.update_yaxes(showgrid=False, zeroline=False)
+    return fig
 
 
 # ---------------------------------------------------------------------------

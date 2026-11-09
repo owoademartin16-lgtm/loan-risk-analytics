@@ -42,8 +42,9 @@ IMPORTANCE_THRESHOLD = 0.05
 # ---------------------------------------------------------------------------
 st.title("Predict Default")
 utils.page_subtitle(
-    "<b>Score a hypothetical loan application</b> against the trained default "
-    "model and get a clear risk assessment."
+    "<b>Score a hypothetical loan application</b> with the best model from the "
+    "notebook — the Random Forest with the highest F1-score — and get a clear "
+    "risk assessment."
 )
 
 try:
@@ -61,6 +62,17 @@ if missing:
         "The model and the data are out of sync."
     )
     st.stop()
+
+# The model card: which model was selected and the notebook scores behind it.
+model_col, f1_col, auc_col = st.columns(3)
+model_col.metric("Selected model", "Random Forest")
+f1_col.metric("F1-score · test", "0.3889")
+auc_col.metric("ROC-AUC · test", "0.6505")
+st.caption(
+    "Best F1-score and recall (0.6036) of the three models compared in the "
+    "notebook. The probability is a relative risk score, not a book-wide "
+    "default rate."
+)
 
 # The importance of each input only depends on the model, so it is computed
 # once per session instead of on every rerun.

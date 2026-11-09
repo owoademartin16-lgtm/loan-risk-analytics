@@ -3,8 +3,9 @@
 A multi-page Streamlit app for monitoring loan default risk on the *LC loans
 granting model dataset* (1,347,681 loans, Jun 2007 – Dec 2018).
 
-* **Dashboard** — KPI summary and eight Plotly charts that react to the
-  sidebar filters.
+* **Dashboard** — KPI summary and eleven notebook-faithful Plotly figures
+  that react to eight slicers (purpose, issue year, loan amount, FICO, DTI,
+  employment length, home ownership and state).
 * **Predict Default** — score a single loan application with the trained
   Random Forest pipeline and get a green / amber / red risk assessment.
 
@@ -18,28 +19,30 @@ re-cleans the data and never writes to either asset.
 
 * **KPI row** — total loans, defaulted loans, overall default rate and
   average loan amount for the current selection.
-* **Sidebar filters** — loan purpose and loan issue year range. The filters live in `app.py`, so they keep their state while you
-  move between pages.
-* **Eight charts**, each with a hover tooltip that shows the group's total
-  loans, its defaulted loans and its default rate:
+* **Slicers** — loan purpose, issue-year range, loan-amount range, FICO
+  range, debt-to-income range, employment length, home ownership and state.
+  They live in `app.py`, so they keep their state while you move between
+  pages, and every figure reacts to all of them at once.
+* **Eleven figures**, each rebuilt with the exact notebook logic — the same
+  bins, band labels, ordering, bar colour (`#2E86AB`), percentage labels and
+  axis headroom — and grouped into five tabs:
 
-  | Chart | Notes |
+  | Tab | Figures |
   |---|---|
-  | Outcome Distribution | Fully paid (emerald `#0F7A52`) vs defaulted (red `#C0392B`) |
-  | Default Rate By issue year | Line chart; warns that the newest cohorts are understated |
-  | Default Rate By loan amount band | 0–5k … 30k+ |
-  | Default Rate By FICO band | Below 580 … 740+ (empty bands are dropped) |
-  | Default Rate By DTI band | 0–10 … 50+ |
-  | Default Rate By employment length | Natural order, `Missing` last |
-  | Default Rate By loan purpose | Horizontal, ≥ 100 loans, sorted by rate |
-  | Top 10 States By Default Rate | Horizontal, ≥ 100 loans, full state names |
+  | Overview | Distribution of Loan Outcomes · Default Rate by Issue Year |
+  | Loan profile | Default Rate by Loan Amount · by Debt-to-Income Ratio · by Employment Length |
+  | Credit score | Default Rate by FICO Score Band · Default Rate by Credit Score group |
+  | Purpose & geography | Default Rate by Loan Purpose · 10 States with the Highest Default Rates |
+  | Model | model comparison table · CatBoost threshold sweep · top-20 Random Forest features |
 
-* Bars carry percentage labels and every y-axis has headroom so the labels
-  are never clipped. The charts are grouped into three tabs
-  (*Overview*, *Credit Risk*, *Purpose & Geography*) and laid out in
-  two columns. The tabs are styled as a segmented control: each tab is sized
-  to its own label, so no tab name is ever truncated, and the active tab
-  carries the white segment.
+* Purpose and state rankings only include groups with at least **100 loans**
+  in the current selection. Bars carry percentage labels and every y-axis has
+  headroom so the labels are never clipped.
+* The **Model** tab reports the notebook's recorded test-set scores:
+  Random Forest is the selected model with the best F1 (0.3889) and recall
+  (0.6036); CatBoost has the highest accuracy and ROC-AUC but flags only
+  0.26% of loans at its default threshold.
+
 
 ### Predict Default page
 
@@ -153,8 +156,8 @@ pickle format for the legacy `predictor.py` module.
 * No cleaning, imputation or feature engineering is performed by the app.
   The only derived column is `issue_year`, which is parsed from `issue_d` so
   the trend chart and the year filter have something to group on.
-* `emp_length = "NI"` is shown as **Missing** on the employment-length
-  chart; the stored value is untouched.
+* `emp_length = "NI"` stays **NI** on the employment-length chart, exactly as
+  in the notebook; the slicer lists it as **Missing** so the filter is readable.
 * Default rate = mean of `Default` × 100 within each group, using that
   group's own loan count as the denominator.
 * Purpose and state rankings only include groups with at least **100 loans**
@@ -197,8 +200,10 @@ and quiet white stat cards, with colour used only where it carries meaning.
 | Canvas | `#FFFFFF` | the page background behind the content |
 | Rail | `#E7EBEA` | the filter panel, a soft neutral so the page is not all white |
 | Tile | `#F4F6F5` | subtitle box, tab track |
-| Emerald | `#0F7A52` | the brand: the "Fully Paid" series, submit button, active navigation |
-| Risk | `#C0392B` | the "Defaulted" series, every default-rate bar and the high-risk band |
+| Emerald | `#0F7A52` | the brand: the "Fully Paid" risk band, submit button, active navigation |
+| Notebook blue | `#2E86AB` | every default-rate bar in the dashboard figures |
+| Notebook orange | `#E4572E` | the "Defaulted" series in the outcome chart |
+| Risk | `#C0392B` | the high-risk band on the prediction card |
 | Amber | `#F59E0B` | the medium-risk band |
 
 The KPI row is four quiet stat cards: a white panel with a hairline border and
@@ -210,8 +215,9 @@ amount. Below 1280 px the row folds into two rows of two, and below 620 px into
 one column.
 
 Typography is **Inter** — loaded from Google Fonts (400–800), with Helvetica
-Neue as the offline fallback — and every chart uses the same typeface and
-colourway (`#0F7A52`, `#C0392B`, `#5EA98A`, `#8FC7AE`, `#C7E2D5`).
+Neue as the offline fallback — and every chart uses the same typeface. The
+dashboard figures keep the notebook's own colourway (`#2E86AB`, `#E4572E`,
+`#1f77b4`) so a bar looks the same here as it does in the analysis.
 
 ### Layout details
 
@@ -224,15 +230,15 @@ colourway (`#0F7A52`, `#C0392B`, `#5EA98A`, `#8FC7AE`, `#C7E2D5`).
 * The selection line under the KPI row ("Showing … of … loans") is printed in
   true black at full opacity — Streamlit's default 60 % caption opacity is
   cancelled so the line can never read as washed-out grey.
-* The charts are drawn without gridlines — only the axis lines remain, so the
-  bars carry the reading.
-* The outcome chart pairs emerald "Fully Paid" with red "Defaulted", so the
-  two outcomes can never be mistaken for one another.
-* Every default-rate chart — the trend line in "Overview" and all of the bars
-  in "Credit Risk" and "Purpose & Geography" — shares one colour, the risk red
-  `#C0392B`, so a bar looks the same in every chart.
-* The risk bands keep their semantics: green `#0F7A52` (low), amber `#F59E0B`
-  (medium) and red `#C0392B` (high).
+* The charts keep a white canvas with a faint horizontal grid, so the bars —
+  not the frame — carry the reading.
+* The outcome chart pairs notebook blue `#2E86AB` "Fully Paid" with orange
+  `#E4572E` "Defaulted", exactly as in the notebook.
+* Every default-rate bar in the dashboard shares the notebook blue `#2E86AB`;
+  the employment-length figure keeps the notebook's `#1f77b4`, so each figure
+  matches its notebook cell.
+* The prediction risk bands keep their semantics: green `#0F7A52` (low), amber
+  `#F59E0B` (medium) and red `#C0392B` (high).
 
 ### Motion
 
